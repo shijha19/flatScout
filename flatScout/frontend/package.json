@@ -10,7 +10,8 @@
   "dependencies": {
     "@vitejs/plugin-react": "^4.6.0",
     "react": "^18.0.0",
-    "react-dom": "^18.0.0"
+    "react-dom": "^18.0.0",
+    "react-router-dom": "^7.6.3"
   },
   "devDependencies": {
     "autoprefixer": "^10.0.0",
