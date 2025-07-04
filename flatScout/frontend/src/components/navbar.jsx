@@ -33,7 +33,7 @@ const Navbar = () => {
           <div className="flex-shrink-0 flex items-center">
             {/* Replace src with your logo image if needed */}
             <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQR5CsZKfa9KhTSO52Fl4ij3wUT1w4I6UbD3g&s" alt="Logo" className="h-8 w-8 mr-2" />
-            <Link to="/" className="text-2xl font-bold text-blue-600">FlatScout</Link>
+            <Link to="/" className="text-2xl font-bold bg-gradient-to-r from-orange-500 via-orange-400 to-[#800020] bg-clip-text text-transparent">FlatScout</Link>
           </div>
           {/* Desktop Menu */}
           <div className="hidden md:flex space-x-8 items-center">
@@ -41,7 +41,7 @@ const Navbar = () => {
               <Link
                 key={link.name}
                 to={link.path}
-                className={`text-gray-700 hover:text-pink-600 font-medium px-2 py-1 rounded transition-colors duration-200 ${location.pathname === link.path ? (idx % 2 === 0 ? 'bg-yellow-100 text-yellow-700' : 'bg-pink-100 text-pink-700') : ''}`}
+                className={`text-gray-700 hover:text-pink-600 font-medium px-2 py-1 rounded transition-colors duration-200${(location.pathname === link.path && link.name !== 'Home') ? (idx % 2 === 0 ? ' bg-yellow-100 text-yellow-700' : ' bg-pink-100 text-pink-700') : ''}`}
               >
                 {link.name}
               </Link>
@@ -110,7 +110,7 @@ const Navbar = () => {
               <Link
                 key={link.name}
                 to={link.path}
-                className={`block text-gray-700 hover:text-pink-600 font-medium px-2 py-1 rounded transition-colors duration-200 ${location.pathname === link.path ? (idx % 2 === 0 ? 'bg-yellow-100 text-yellow-700' : 'bg-pink-100 text-pink-700') : ''}`}
+                className={`block text-gray-700 hover:text-pink-600 font-medium px-2 py-1 rounded transition-colors duration-200${(location.pathname === link.path && link.name !== 'Home') ? (idx % 2 === 0 ? ' bg-yellow-100 text-yellow-700' : ' bg-pink-100 text-pink-700') : ''}`}
                 onClick={() => setIsOpen(false)}
               >
                 {link.name}

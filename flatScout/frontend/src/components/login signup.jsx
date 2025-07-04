@@ -73,7 +73,7 @@ const LoginSignup = () => {
           </div>
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition mb-2 shadow"
+            className="w-full bg-blue-600 text-white py-2 rounded-full font-semibold hover:bg-blue-700 transition mb-2 shadow text-base"
           >
             Login
           </button>
@@ -85,7 +85,7 @@ const LoginSignup = () => {
         </div>
         <button
           type="button"
-          className="w-full flex items-center justify-center gap-3 border border-gray-300 py-2 rounded-lg font-semibold text-gray-700 bg-white hover:bg-gray-50 shadow"
+          className="w-full flex items-center justify-center gap-3 border border-gray-300 py-2 rounded-full font-semibold text-gray-700 bg-white hover:bg-gray-50 shadow text-base"
           onClick={() => alert('Google login coming soon!')}
         >
           <svg className="w-5 h-5" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
