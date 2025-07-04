@@ -20,7 +20,7 @@ const Navbar = () => {
           {/* Logo/Brand */}
           <div className="flex-shrink-0 flex items-center">
             {/* Replace src with your logo image if needed */}
-            <img src="/logo192.png" alt="Logo" className="h-8 w-8 mr-2" />
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQR5CsZKfa9KhTSO52Fl4ij3wUT1w4I6UbD3g&s" alt="Logo" className="h-8 w-8 mr-2" />
             <Link to="/" className="text-2xl font-bold text-blue-600">FlatScout</Link>
           </div>
           {/* Desktop Menu */}
