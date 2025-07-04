@@ -19,10 +19,13 @@ const Navbar = () => {
     navigate('/login');
   };
 
+  // Updated navLinks as per user request
   const navLinks = [
     { name: "Home", path: "/" },
-    { name: "About", path: "/about" },
-    { name: "Contact", path: "/contact" },
+    { name: "Find Flatmate", path: "/find-flatmate" },
+    { name: "Report Listing", path: "/report-listing" },
+    { name: "Booking Calendar", path: "/booking-calendar" },
+    { name: "Rent Estimator", path: "/rent-estimator" },
   ];
 
   return (
@@ -37,50 +40,45 @@ const Navbar = () => {
           </div>
           {/* Desktop Menu */}
           <div className="hidden md:flex space-x-8 items-center">
-            {navLinks.map((link, idx) => (
+            {navLinks.map((link) => (
               <Link
                 key={link.name}
                 to={link.path}
-                className={`text-gray-700 hover:text-pink-600 font-medium px-2 py-1 rounded transition-colors duration-200${(location.pathname === link.path && link.name !== 'Home') ? (idx % 2 === 0 ? ' bg-yellow-100 text-yellow-700' : ' bg-pink-100 text-pink-700') : ''}`}
+                className={`text-gray-700 hover:text-pink-600 font-medium px-2 py-1 rounded transition-colors duration-200${(location.pathname === link.path && link.name !== 'Home') ? (link.name === 'Find Flatmate' || link.name === 'Booking Calendar' ? ' bg-yellow-100 text-yellow-700' : ' bg-pink-100 text-pink-700') : ''}`}
               >
                 {link.name}
               </Link>
             ))}
-            {!isLoggedIn ? (
+            {!isLoggedIn && (
               <Link
                 to="/login"
                 className={`text-gray-700 hover:text-pink-600 font-medium px-2 py-1 rounded transition-colors duration-200 ${location.pathname === '/login' ? 'bg-pink-100 text-pink-700' : ''}`}
               >
                 Login / Signup
               </Link>
-            ) : (
-              <button
-                onClick={handleLogout}
-                className="text-gray-700 hover:text-orange-600 font-medium px-2 py-1 rounded transition-colors duration-200 bg-orange-100 text-orange-700"
-              >
-                Logout
-              </button>
             )}
-            {/* Profile Dropdown */}
-            <div className="relative ml-4">
-              <button
-                onClick={() => setProfileOpen((prev) => !prev)}
-                className="flex items-center focus:outline-none"
-              >
-                <img
-                  src="https://ui-avatars.com/api/?name=User"
-                  alt="Profile"
-                  className="h-8 w-8 rounded-full border-2 border-pink-300"
-                />
-              </button>
-              {profileOpen && (
-                <div className="absolute right-0 mt-2 w-40 bg-white border border-pink-100 rounded shadow-lg py-2 z-50">
-                  <Link to="/profile" className="block px-4 py-2 text-gray-700 hover:bg-yellow-50">Profile</Link>
-                  <Link to="/settings" className="block px-4 py-2 text-gray-700 hover:bg-pink-50">Settings</Link>
-                  <button className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-orange-50" onClick={handleLogout}>Logout</button>
-                </div>
-              )}
-            </div>
+            {/* Profile Dropdown (only when logged in) */}
+            {isLoggedIn && (
+              <div className="relative ml-4">
+                <button
+                  onClick={() => setProfileOpen((prev) => !prev)}
+                  className="flex items-center focus:outline-none"
+                >
+                  <img
+                    src="https://ui-avatars.com/api/?name=User"
+                    alt="Profile"
+                    className="h-8 w-8 rounded-full border-2 border-pink-300"
+                  />
+                </button>
+                {profileOpen && (
+                  <div className="absolute right-0 mt-2 w-40 bg-white border border-pink-100 rounded shadow-lg py-2 z-50">
+                    <Link to="/profile" className="block px-4 py-2 text-gray-700 hover:bg-yellow-50">Profile</Link>
+                    <Link to="/settings" className="block px-4 py-2 text-gray-700 hover:bg-pink-50">Settings</Link>
+                    <button className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-orange-50" onClick={handleLogout}>Logout</button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center">
@@ -106,17 +104,17 @@ const Navbar = () => {
       {isOpen && (
         <div className="md:hidden bg-white border-t border-yellow-100" id="mobile-menu">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            {navLinks.map((link, idx) => (
+            {navLinks.map((link) => (
               <Link
                 key={link.name}
                 to={link.path}
-                className={`block text-gray-700 hover:text-pink-600 font-medium px-2 py-1 rounded transition-colors duration-200${(location.pathname === link.path && link.name !== 'Home') ? (idx % 2 === 0 ? ' bg-yellow-100 text-yellow-700' : ' bg-pink-100 text-pink-700') : ''}`}
+                className={`block text-gray-700 hover:text-pink-600 font-medium px-2 py-1 rounded transition-colors duration-200${(location.pathname === link.path && link.name !== 'Home') ? (link.name === 'Find Flatmate' || link.name === 'Booking Calendar' ? ' bg-yellow-100 text-yellow-700' : ' bg-pink-100 text-pink-700') : ''}`}
                 onClick={() => setIsOpen(false)}
               >
                 {link.name}
               </Link>
             ))}
-            {!isLoggedIn ? (
+            {!isLoggedIn && (
               <Link
                 to="/login"
                 className={`block text-gray-700 hover:text-pink-600 font-medium px-2 py-1 rounded transition-colors duration-200 ${location.pathname === '/login' ? 'bg-pink-100 text-pink-700' : ''}`}
@@ -124,20 +122,15 @@ const Navbar = () => {
               >
                 Login / Signup
               </Link>
-            ) : (
-              <button
-                onClick={() => { setIsOpen(false); handleLogout(); }}
-                className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-orange-50"
-              >
-                Logout
-              </button>
             )}
-            {/* Profile Dropdown for mobile */}
-            <div className="mt-2 border-t pt-2">
-              <Link to="/profile" className="block px-4 py-2 text-gray-700 hover:bg-yellow-50">Profile</Link>
-              <Link to="/settings" className="block px-4 py-2 text-gray-700 hover:bg-pink-50">Settings</Link>
-              <button className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-orange-50" onClick={handleLogout}>Logout</button>
-            </div>
+            {/* Profile Dropdown for mobile (only when logged in) */}
+            {isLoggedIn && (
+              <div className="mt-2 border-t pt-2">
+                <Link to="/profile" className="block px-4 py-2 text-gray-700 hover:bg-yellow-50">Profile</Link>
+                <Link to="/settings" className="block px-4 py-2 text-gray-700 hover:bg-pink-50">Settings</Link>
+                <button className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-orange-50" onClick={handleLogout}>Logout</button>
+              </div>
+            )}
           </div>
         </div>
       )}
