@@ -8,8 +8,7 @@ const FlatListings = () => {
     location: "",
     price: "",
     image: "",
-    description: "",
-    section: "saved" // default section
+    description: ""
   });
   const [showForm, setShowForm] = useState(false);
 
@@ -17,9 +16,7 @@ const FlatListings = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSectionChange = (e) => {
-    setForm({ ...form, section: e.target.value });
-  };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,7 +29,7 @@ const FlatListings = () => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Failed to add flat');
       setFlats([data.flat, ...flats]);
-      setForm({ title: "", location: "", price: "", image: "", description: "", section: "saved" });
+      setForm({ title: "", location: "", price: "", image: "", description: "" });
       setShowForm(false);
     } catch (err) {
       alert(err.message);
@@ -76,14 +73,7 @@ const FlatListings = () => {
               <label className="block text-gray-700 font-semibold mb-2">Image URL</label>
               <input name="image" value={form.image} onChange={handleChange} className="w-full px-4 py-2 border-2 border-pink-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300" />
             </div>
-            <div>
-              <label className="block text-gray-700 font-semibold mb-2">Section</label>
-              <select name="section" value={form.section} onChange={handleSectionChange} className="w-full px-4 py-2 border-2 border-pink-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300">
-                <option value="saved">Saved</option>
-                <option value="scheduled">Scheduled</option>
-                <option value="visited">Visited</option>
-              </select>
-            </div>
+
           </div>
           <div>
             <label className="block text-gray-700 font-semibold mb-2">Description</label>

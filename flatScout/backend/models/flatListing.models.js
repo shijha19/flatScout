@@ -23,12 +23,7 @@ const flatListingSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
-  section: {
-    type: String,
-    enum: ['saved', 'scheduled', 'visited'],
-    default: 'saved',
-    required: true
-  },
+  
   createdBy: {
     type: String, // user email or id
     required: false
