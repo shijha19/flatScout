@@ -8,7 +8,7 @@ const Signup = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name || !email || !password || !confirmPassword) {
       setError('Please fill in all fields.');
@@ -21,8 +21,25 @@ const Signup = () => {
       return;
     }
     setError('');
-    setSuccess('Signup successful!');
-    // TODO: Add signup logic (API call)
+    setSuccess('');
+    try {
+      const response = await fetch('/api/user/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setSuccess('Signup successful! You can now log in.');
+        setError('');
+      } else {
+        setError(data.message || 'Signup failed.');
+        setSuccess('');
+      }
+    } catch (err) {
+      setError('Network error. Please try again.');
+      setSuccess('');
+    }
   };
 
   return (
