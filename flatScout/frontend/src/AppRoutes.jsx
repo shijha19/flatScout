@@ -6,6 +6,9 @@ import LoginPage from './pages/LoginPage';
 import Signup from './pages/Signup';
 import FindFlatmates from './components/FindFlatmates';
 import FlatmateForm from './components/FlatmateForm';
+
+
+
 import Profile from './pages/Profile';
 import EditProfile from './pages/EditProfile';
 import ChangePassword from './pages/ChangePassword';
