@@ -25,6 +25,7 @@ const LoginSignup = () => {
       if (!res.ok) throw new Error(data.message || 'Login failed');
       alert(`Logged in as ${data.user.name} (${data.user.email})`);
       localStorage.setItem('userLoggedIn', 'true');
+      localStorage.setItem('userEmail', data.user.email); // Store email for profile fetch
       navigate('/'); // Redirect to dashboard
     } catch (err) {
       setError(err.message);

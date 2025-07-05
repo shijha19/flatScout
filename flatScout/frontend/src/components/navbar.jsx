@@ -22,6 +22,7 @@ const Navbar = () => {
   // Updated navLinks as per user request
   const navLinks = [
     { name: "Home", path: "/" },
+    { name: "Flat Listings", path: "/flat-listings" },
     { name: "Find Flatmate", path: "/find-flatmate" },
     { name: "Report Listing", path: "/report-listing" },
     { name: "Booking Calendar", path: "/booking-calendar" },

@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import pgRoutes from './routes/pgRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import flatListingRoutes from './routes/flatListingRoutes.js';
 dotenv.config();
 
 const app = express();
@@ -12,6 +13,7 @@ const PORT = process.env.PORT || 5000;
 app.use(express.json());
 app.use('/api/pg', pgRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/flats', flatListingRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {
