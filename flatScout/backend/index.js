@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import pgRoutes from './routes/pgRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import flatListingRoutes from './routes/flatListingRoutes.js';
+import flatmateRoutes from './routes/flatmate.js';
 dotenv.config();
 
 const app = express();
@@ -14,6 +15,7 @@ app.use(express.json());
 app.use('/api/pg', pgRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/flats', flatListingRoutes);
+app.use('/api/flatmates', flatmateRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {
