@@ -58,8 +58,9 @@ const Profile = () => {
         </div>
       </div>
       <div className="mt-8 flex justify-center gap-4">
-        <a href="/edit-profile" className="px-6 py-2 bg-pink-500 text-white rounded-lg font-semibold shadow hover:bg-pink-600 transition text-center">Edit Profile</a>
-        <a href="/change-password" className="px-6 py-2 bg-yellow-100 text-yellow-700 rounded-lg font-semibold shadow hover:bg-yellow-200 transition text-center">Change Password</a>
+        <a href="/edit-profile" className="px-6 py-2 bg-violet-100 text-violet-700 rounded-lg font-semibold shadow hover:bg-violet-200 transition text-center">Edit Profile</a>
+        <a href="/change-password" className="px-6 py-2 bg-red-100 text-red-700 rounded-lg font-semibold shadow hover:bg-red-200 transition text-center">Change Password</a>
+        <a href="/" className="px-6 py-2 bg-blue-100 text-blue-700 rounded-lg font-semibold shadow hover:bg-blue-200 transition text-center">Return to Home</a>
       </div>
     </div>
   );

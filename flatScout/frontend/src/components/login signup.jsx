@@ -26,6 +26,9 @@ const LoginSignup = () => {
       alert(`Logged in as ${data.user.name} (${data.user.email})`);
       localStorage.setItem('userLoggedIn', 'true');
       localStorage.setItem('userEmail', data.user.email); // Store email for profile fetch
+      if (data.user && data.user._id) {
+        localStorage.setItem('userId', data.user._id);
+      }
       navigate('/'); // Redirect to dashboard
     } catch (err) {
       setError(err.message);

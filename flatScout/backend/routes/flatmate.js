@@ -1,6 +1,5 @@
 import express from 'express';
 import FlatmateProfile from '../models/FlatmateProfile.js';
-import { kmeansMatchAndScore } from '../clustering/kmeansMatch.js';
 
 const router = express.Router();
 
@@ -31,16 +30,12 @@ router.post('/profile/:userId', async (req, res) => {
   }
 });
 
-// Get matches for a user, sorted by compatibility
+// Get matches for a user, show all cards (no kmeans clustering)
 router.get('/matches/:userId', async (req, res) => {
   try {
     const userId = req.params.userId;
-    const userProfile = await FlatmateProfile.findOne({ userId });
-    if (!userProfile) return res.status(404).json({ error: 'Profile not found' });
     const allProfiles = await FlatmateProfile.find({ userId: { $ne: userId } });
-    // Run kmeans and get compatibility scores
-    const matches = kmeansMatchAndScore(userProfile, allProfiles);
-    res.json(matches);
+    res.json(allProfiles);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
