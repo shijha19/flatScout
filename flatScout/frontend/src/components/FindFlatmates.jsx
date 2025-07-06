@@ -3,54 +3,6 @@ import { useNavigate } from "react-router-dom";
 import FlatmateCard from "../components/FlatmateCard";
 import Navbar from "./navbar";
 
-const sampleFlatmates = [
-	{
-		name: "Amit Sharma",
-		gender: "Male",
-		location: "Bangalore",
-		budget: 12000,
-		preferredGender: "Any",
-		bio: "Software engineer, loves music and hiking.",
-		photoUrl: "https://randomuser.me/api/portraits/men/32.jpg",
-		habits: {
-			smoking: "No",
-			pets: "Yes",
-			sleep: "Early",
-			cleanliness: "High",
-		},
-	},
-	{
-		name: "Priya Singh",
-		gender: "Female",
-		location: "Mumbai",
-		budget: 15000,
-		preferredGender: "Female",
-		bio: "Designer, foodie, and pet lover.",
-		photoUrl: "https://randomuser.me/api/portraits/women/44.jpg",
-		habits: {
-			smoking: "No",
-			pets: "No",
-			sleep: "Late",
-			cleanliness: "Medium",
-		},
-	},
-	{
-		name: "Rahul Verma",
-		gender: "Male",
-		location: "Delhi",
-		budget: 10000,
-		preferredGender: "Any",
-		bio: "Student, cricket fan, likes to keep things tidy.",
-		photoUrl: "https://randomuser.me/api/portraits/men/65.jpg",
-		habits: {
-			smoking: "Yes",
-			pets: "No",
-			sleep: "Late",
-			cleanliness: "High",
-		},
-	},
-];
-
 export default function FindFlatmates() {
 	const [flatmates, setFlatmates] = useState([]);
 	const [loading, setLoading] = useState(true);
@@ -62,15 +14,15 @@ export default function FindFlatmates() {
 		fetch(`/api/flatmates/matches/${userId}`)
 			.then((res) => res.json())
 			.then((data) => {
-				if (Array.isArray(data) && data.length > 0) {
+				if (Array.isArray(data)) {
 					setFlatmates(data);
 				} else {
-					setFlatmates(sampleFlatmates);
+					setFlatmates([]);
 				}
 				setLoading(false);
 			})
 			.catch(() => {
-				setFlatmates(sampleFlatmates);
+				setFlatmates([]);
 				setLoading(false);
 			});
 	}, []);
