@@ -87,7 +87,9 @@ const LoginSignup = () => {
         <button
           type="button"
           className="w-full flex items-center justify-center gap-3 border border-gray-300 py-2 rounded-full font-semibold text-gray-700 bg-white hover:bg-gray-50 shadow text-base"
-          onClick={() => alert('Google login coming soon!')}
+          onClick={() => {
+            window.open("http://localhost:5000/api/auth/google", "_self");
+          }}
         >
           <svg className="w-5 h-5" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
             <g clipPath="url(#clip0_17_40)">

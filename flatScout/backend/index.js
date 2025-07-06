@@ -1,17 +1,35 @@
 import express from 'express';
+import session from 'express-session';
+import passport from 'passport';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import pgRoutes from './routes/pgRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import flatListingRoutes from './routes/flatListingRoutes.js';
 import flatmateRoutes from './routes/flatmate.js';
+import authRoutes from './routes/auth.js';
+import './config/passport.js';
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
+// Session middleware
+app.use(session({
+  secret: process.env.JWT_SECRET,
+  resave: false,
+  saveUninitialized: true
+}));
+
+// Passport middleware
+app.use(passport.initialize());
+app.use(passport.session());
+
+// JSON body parser
 app.use(express.json());
+
+// Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/pg', pgRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/flats', flatListingRoutes);
@@ -31,7 +49,7 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('✅ MongoDB connected');
     app.listen(PORT, () => {
-      console.log(`🚀 Server running on http://localhost:${PORT}`);
+      console.log(`🚀 Backend running on http://localhost:${PORT}`);
     });
   })
   .catch((err) => {

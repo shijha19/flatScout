@@ -13,6 +13,8 @@ import Profile from './pages/Profile';
 import EditProfile from './pages/EditProfile';
 import ChangePassword from './pages/ChangePassword';
 import FlatListings from './pages/FlatListings';
+import OAuthSuccess from './pages/OAuthSuccess';
+import Dashboard from './pages/Dashboard';
 
 const AppRoutes = () => (
   <Routes>
@@ -25,6 +27,8 @@ const AppRoutes = () => (
     <Route path="/flat-listings" element={<FlatListings />} />
     <Route path="/find-flatmate" element={<FindFlatmates />} />
     <Route path="/edit-flatmate-preferences" element={<FlatmateForm />} />
+    <Route path="/oauth-success" element={<OAuthSuccess />} />
+    <Route path="/dashboard" element={<Dashboard />} />
   </Routes>
 );
 
