@@ -9,23 +9,28 @@ export default function FindFlatmates() {
 	const [error, setError] = useState(null);
 	const navigate = useNavigate();
 
-	useEffect(() => {
-		const userId = localStorage.getItem("userId");
-		fetch(`/api/flatmates/matches/${userId}`)
-			.then((res) => res.json())
-			.then((data) => {
-				if (Array.isArray(data)) {
-					setFlatmates(data);
-				} else {
-					setFlatmates([]);
-				}
-				setLoading(false);
-			})
-			.catch(() => {
-				setFlatmates([]);
-				setLoading(false);
-			});
-	}, []);
+  useEffect(() => {
+	const userId = localStorage.getItem("userId");
+	const userEmail = localStorage.getItem("userEmail");
+	let url = `/api/flatmates/matches/${userId}`;
+	if (userEmail) {
+	  url += `?userEmail=${encodeURIComponent(userEmail)}`;
+	}
+	fetch(url)
+	  .then((res) => res.json())
+	  .then((data) => {
+		if (Array.isArray(data)) {
+		  setFlatmates(data);
+		} else {
+		  setFlatmates([]);
+		}
+		setLoading(false);
+	  })
+	  .catch(() => {
+		setFlatmates([]);
+		setLoading(false);
+	  });
+  }, []);
 
 	if (loading)
 		return (

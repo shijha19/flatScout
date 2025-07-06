@@ -14,7 +14,12 @@ const Navbar = () => {
   }, [location]);
 
   const handleLogout = () => {
+    // Remove all user-related info from localStorage
     localStorage.removeItem('userLoggedIn');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('name');
+    localStorage.removeItem('token');
     setIsLoggedIn(false);
     navigate('/login');
   };
@@ -22,11 +27,14 @@ const Navbar = () => {
   // Updated navLinks as per user request
   const navLinks = [
     { name: "Home", path: "/" },
-    { name: "Flat Listings", path: "/flat-listings" },
-    { name: "Find Flatmate", path: "/find-flatmate" },
-    { name: "Report Listing", path: "/report-listing" },
-    { name: "Booking Calendar", path: "/booking-calendar" },
-    { name: "Rent Estimator", path: "/rent-estimator" },
+    // Feature links only for logged in users
+    ...(isLoggedIn ? [
+      { name: "Flat Listings", path: "/flat-listings" },
+      { name: "Find Flatmate", path: "/find-flatmate" },
+      { name: "Report Listing", path: "/report-listing" },
+      { name: "Booking Calendar", path: "/booking-calendar" },
+      { name: "Rent Estimator", path: "/rent-estimator" },
+    ] : [])
   ];
 
   return (
@@ -66,7 +74,7 @@ const Navbar = () => {
                   className="flex items-center focus:outline-none"
                 >
                   <img
-                    src="https://ui-avatars.com/api/?name=User"
+                    src="https://cdn-icons-png.flaticon.com/512/8345/8345328.png"
                     alt="Profile"
                     className="h-8 w-8 rounded-full border-2 border-pink-300"
                   />

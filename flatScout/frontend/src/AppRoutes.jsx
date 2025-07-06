@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
+import ProtectedRoute from './components/ProtectedRoute';
 import App from './components/App';
 import LoginPage from './pages/LoginPage';
 import Signup from './pages/Signup';
@@ -21,14 +22,16 @@ const AppRoutes = () => (
     <Route path="/" element={<App />} />
     <Route path="/login" element={<LoginPage />} />
     <Route path="/signup" element={<Signup />} />
-    <Route path="/profile" element={<Profile />} />
-    <Route path="/edit-profile" element={<EditProfile />} />
-    <Route path="/change-password" element={<ChangePassword />} />
-    <Route path="/flat-listings" element={<FlatListings />} />
-    <Route path="/find-flatmate" element={<FindFlatmates />} />
-    <Route path="/edit-flatmate-preferences" element={<FlatmateForm />} />
+    {/* Protected Routes */}
+    <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+    <Route path="/edit-profile" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
+    <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
+    <Route path="/flat-listings" element={<ProtectedRoute><FlatListings /></ProtectedRoute>} />
+    <Route path="/find-flatmate" element={<ProtectedRoute><FindFlatmates /></ProtectedRoute>} />
+    <Route path="/edit-flatmate-preferences" element={<ProtectedRoute><FlatmateForm /></ProtectedRoute>} />
+    <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+    {/* OAuth success must be public so it can set login state */}
     <Route path="/oauth-success" element={<OAuthSuccess />} />
-    <Route path="/dashboard" element={<Dashboard />} />
   </Routes>
 );
 

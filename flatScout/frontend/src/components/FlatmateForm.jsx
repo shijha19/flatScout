@@ -5,7 +5,23 @@ import { useNavigate } from "react-router-dom";
 export default function FlatmateForm() {
   const [form, setForm] = useState({
     userId: "",
+    userEmail: "",
+    name: "",
+    photoUrl: "",
     gender: "",
+    age: "",
+    occupation: "",
+    hometown: "",
+    languages: "",
+    foodPreference: "",
+    socialPreference: "",
+    hobbies: "",
+    workMode: "",
+    relationshipStatus: "",
+    musicPreference: "",
+    guestPolicy: "",
+    wakeupTime: "",
+    bedtime: "",
     preferredGender: "",
     budget: "",
     locationPreference: "",
@@ -22,8 +38,12 @@ export default function FlatmateForm() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const userId = localStorage.getItem("userId");
-    if (userId) setForm(f => ({ ...f, userId }));
+    let userId = localStorage.getItem("userId");
+    const name = localStorage.getItem("name") || "";
+    const userEmail = localStorage.getItem("userEmail") || "";
+    // Fallback: use email as userId if userId is missing
+    if (!userId && userEmail) userId = userEmail;
+    if (userId) setForm(f => ({ ...f, userId, name, userEmail }));
     // Optionally fetch existing profile here
   }, []);
 
@@ -39,7 +59,6 @@ export default function FlatmateForm() {
   const submitForm = async (e) => {
     e.preventDefault();
     setError("");
-    console.log("Submitting form:", form); // Debug log
     if (!form.userId) {
       setError("User ID missing. Please log in again.");
       return;
@@ -47,7 +66,12 @@ export default function FlatmateForm() {
     try {
       await axios.post(`/api/flatmates/profile/${form.userId}`, {
         ...form,
+        userEmail: form.userEmail || localStorage.getItem("userEmail") || "",
+        age: Number(form.age),
         budget: Number(form.budget),
+        languages: form.languages.split(',').map(l => l.trim()),
+        hobbies: form.hobbies.split(',').map(h => h.trim()),
+        name: form.name || localStorage.getItem("name") || "User",
       });
       setSuccess(true);
       setTimeout(() => {
@@ -61,44 +85,185 @@ export default function FlatmateForm() {
   };
 
   return (
-    <div className="p-6 max-w-md mx-auto bg-white rounded-lg shadow-lg mt-8">
-      <h2 className="text-xl font-bold mb-4 text-blue-700">Edit Flatmate Preferences</h2>
-      <form onSubmit={submitForm} className="flex flex-col gap-3">
-        <select name="gender" value={form.gender} onChange={handleChange} required>
-          <option value="">Select Gender</option>
-          <option value="Female">Female</option>
-          <option value="Male">Male</option>
-        </select>
-        <select name="preferredGender" value={form.preferredGender} onChange={handleChange} required>
-          <option value="">Preferred Roommate Gender</option>
-          <option value="Any">Any</option>
-          <option value="Female">Only Girls</option>
-          <option value="Male">Only Boys</option>
-        </select>
-        <input type="number" name="budget" value={form.budget} onChange={handleChange} placeholder="Budget (INR)" required />
-        <input type="text" name="locationPreference" value={form.locationPreference} onChange={handleChange} placeholder="Location Preference" required />
-        <select name="smoking" value={form.habits.smoking} onChange={handleChange} required>
-          <option value="No">Non-Smoker</option>
-          <option value="Yes">Smoker</option>
-        </select>
-        <select name="pets" value={form.habits.pets} onChange={handleChange} required>
-          <option value="No">No Pets</option>
-          <option value="Yes">Has Pets</option>
-        </select>
-        <select name="sleepTime" value={form.habits.sleepTime} onChange={handleChange} required>
-          <option value="Early">Early Sleeper</option>
-          <option value="Late">Late Sleeper</option>
-        </select>
-        <select name="cleanliness" value={form.habits.cleanliness} onChange={handleChange} required>
-          <option value="Low">Low Cleanliness</option>
-          <option value="Medium">Medium Cleanliness</option>
-          <option value="High">High Cleanliness</option>
-        </select>
-        <textarea name="bio" value={form.bio} onChange={handleChange} placeholder="Short Bio" rows={3} required />
-        {error && <div className="text-red-500">{error}</div>}
-        {success && <div className="text-green-600">Preferences saved!</div>}
-        <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-lg mt-2">
-          Save
+    <div className="p-4 sm:p-8 max-w-2xl mx-auto bg-gradient-to-br from-blue-50 via-pink-50 to-yellow-50 rounded-2xl shadow-2xl mt-10 border border-pink-100">
+      <h2 className="text-2xl font-extrabold mb-2 text-center text-blue-700 drop-shadow">Edit Flatmate Preferences</h2>
+      <p className="text-gray-500 mb-6 text-center">Tell us more about yourself to find the best flatmates!</p>
+      <form onSubmit={submitForm} className="flex flex-col gap-6">
+        {/* Personal Info */}
+        <div>
+          <h3 className="text-lg font-semibold text-pink-700 mb-2">Personal Information</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">Name</label>
+              <input type="text" name="name" value={form.name} onChange={handleChange} placeholder="Your Name" required className="w-full rounded border px-3 py-2" />
+            </div>
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">Gender</label>
+              <select name="gender" value={form.gender} onChange={handleChange} required className="w-full rounded border px-3 py-2">
+                <option value="">Select Gender</option>
+                <option value="Female">Female</option>
+                <option value="Male">Male</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">Age</label>
+              <input type="number" name="age" value={form.age} onChange={handleChange} placeholder="Age" min="16" max="100" required className="w-full rounded border px-3 py-2" />
+            </div>
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">Occupation</label>
+              <input type="text" name="occupation" value={form.occupation} onChange={handleChange} placeholder="e.g. Student, Engineer" required className="w-full rounded border px-3 py-2" />
+            </div>
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">Hometown/City</label>
+              <input type="text" name="hometown" value={form.hometown} onChange={handleChange} placeholder="Hometown/City" required className="w-full rounded border px-3 py-2" />
+            </div>
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">Languages Spoken</label>
+              <input type="text" name="languages" value={form.languages} onChange={handleChange} placeholder="e.g. English, Hindi" required className="w-full rounded border px-3 py-2" />
+            </div>
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">Food Preference</label>
+              <select name="foodPreference" value={form.foodPreference} onChange={handleChange} required className="w-full rounded border px-3 py-2">
+                <option value="">Food Preference</option>
+                <option value="Veg">Veg</option>
+                <option value="Non-Veg">Non-Veg</option>
+                <option value="Eggetarian">Eggetarian</option>
+                <option value="Vegan">Vegan</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">Social Preference</label>
+              <select name="socialPreference" value={form.socialPreference} onChange={handleChange} required className="w-full rounded border px-3 py-2">
+                <option value="">Social Preference</option>
+                <option value="Introvert">Introvert</option>
+                <option value="Extrovert">Extrovert</option>
+                <option value="Ambivert">Ambivert</option>
+              </select>
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-gray-700 font-medium mb-1">Hobbies/Interests</label>
+              <input type="text" name="hobbies" value={form.hobbies} onChange={handleChange} placeholder="e.g. Reading, Music, Sports" className="w-full rounded border px-3 py-2" />
+            </div>
+          </div>
+        </div>
+        <hr className="my-2 border-pink-200" />
+        {/* Lifestyle & Preferences */}
+        <div>
+          <h3 className="text-lg font-semibold text-pink-700 mb-2">Lifestyle & Preferences</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">Work/Study From</label>
+              <select name="workMode" value={form.workMode} onChange={handleChange} required className="w-full rounded border px-3 py-2">
+                <option value="">Work/Study From</option>
+                <option value="Home">Home</option>
+                <option value="Office">Office</option>
+                <option value="College">College</option>
+                <option value="Hybrid">Hybrid</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">Relationship Status</label>
+              <select name="relationshipStatus" value={form.relationshipStatus} onChange={handleChange} className="w-full rounded border px-3 py-2">
+                <option value="">Relationship Status</option>
+                <option value="Single">Single</option>
+                <option value="In a Relationship">In a Relationship</option>
+                <option value="Married">Married</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">Music Preference</label>
+              <input type="text" name="musicPreference" value={form.musicPreference} onChange={handleChange} placeholder="Music Preference (optional)" className="w-full rounded border px-3 py-2" />
+            </div>
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">Guest Policy</label>
+              <select name="guestPolicy" value={form.guestPolicy} onChange={handleChange} required className="w-full rounded border px-3 py-2">
+                <option value="">Guest Policy</option>
+                <option value="Comfortable">Comfortable with guests</option>
+                <option value="Not Comfortable">Not comfortable with guests</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">Wake-up Time</label>
+              <input type="time" name="wakeupTime" value={form.wakeupTime} onChange={handleChange} className="w-full rounded border px-3 py-2" />
+            </div>
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">Bedtime</label>
+              <input type="time" name="bedtime" value={form.bedtime} onChange={handleChange} className="w-full rounded border px-3 py-2" />
+            </div>
+          </div>
+        </div>
+        <hr className="my-2 border-pink-200" />
+        {/* Roommate Preferences */}
+        <div>
+          <h3 className="text-lg font-semibold text-pink-700 mb-2">Roommate Preferences</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">Preferred Roommate Gender</label>
+              <select name="preferredGender" value={form.preferredGender} onChange={handleChange} required className="w-full rounded border px-3 py-2">
+                <option value="">Preferred Roommate Gender</option>
+                <option value="Any">Any</option>
+                <option value="Female">Only Girls</option>
+                <option value="Male">Only Boys</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">Budget (INR)</label>
+              <input type="number" name="budget" value={form.budget} onChange={handleChange} placeholder="Budget (INR)" required className="w-full rounded border px-3 py-2" />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-gray-700 font-medium mb-1">Location Preference</label>
+              <input type="text" name="locationPreference" value={form.locationPreference} onChange={handleChange} placeholder="Location Preference" required className="w-full rounded border px-3 py-2" />
+            </div>
+          </div>
+        </div>
+        <hr className="my-2 border-pink-200" />
+        {/* Habits */}
+        <div>
+          <h3 className="text-lg font-semibold text-pink-700 mb-2">Habits</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">Smoking</label>
+              <select name="smoking" value={form.habits.smoking} onChange={handleChange} required className="w-full rounded border px-3 py-2">
+                <option value="No">Non-Smoker</option>
+                <option value="Yes">Smoker</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">Pets</label>
+              <select name="pets" value={form.habits.pets} onChange={handleChange} required className="w-full rounded border px-3 py-2">
+                <option value="No">No Pets</option>
+                <option value="Yes">Has Pets</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">Sleep Time</label>
+              <select name="sleepTime" value={form.habits.sleepTime} onChange={handleChange} required className="w-full rounded border px-3 py-2">
+                <option value="Early">Early Sleeper</option>
+                <option value="Late">Late Sleeper</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">Cleanliness</label>
+              <select name="cleanliness" value={form.habits.cleanliness} onChange={handleChange} required className="w-full rounded border px-3 py-2">
+                <option value="Low">Low Cleanliness</option>
+                <option value="Medium">Medium Cleanliness</option>
+                <option value="High">High Cleanliness</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <hr className="my-2 border-pink-200" />
+        {/* Bio */}
+        <div>
+          <h3 className="text-lg font-semibold text-pink-700 mb-2">About You</h3>
+          <label className="block text-gray-700 font-medium mb-1">Short Bio</label>
+          <textarea name="bio" value={form.bio} onChange={handleChange} placeholder="Tell us about yourself in a few sentences..." rows={3} required className="w-full rounded border px-3 py-2" />
+        </div>
+        {error && <div className="text-red-500 text-center font-medium">{error}</div>}
+        {success && <div className="text-green-600 text-center font-medium">Preferences saved!</div>}
+        <button type="submit" className="bg-gradient-to-r from-orange-400 to-pink-500 text-white px-6 py-2 rounded-full mt-2 font-bold shadow hover:from-orange-500 hover:to-pink-600 transition-all">
+          Save Preferences
         </button>
       </form>
     </div>

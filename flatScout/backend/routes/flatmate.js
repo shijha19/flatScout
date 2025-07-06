@@ -31,10 +31,22 @@ router.post('/profile/:userId', async (req, res) => {
 });
 
 // Get matches for a user, show all cards (no kmeans clustering)
+// Get matches for a user, show all cards except own (by userId or email)
 router.get('/matches/:userId', async (req, res) => {
   try {
     const userId = req.params.userId;
-    const allProfiles = await FlatmateProfile.find({ userId: { $ne: userId } });
+    // Optionally support email fallback for uniqueness
+    const userEmail = req.query.userEmail;
+    let query = { userId: { $ne: userId } };
+    if (userEmail) {
+      query = {
+        $and: [
+          { userId: { $ne: userId } },
+          { userEmail: { $ne: userEmail } }
+        ]
+      };
+    }
+    const allProfiles = await FlatmateProfile.find(query);
     res.json(allProfiles);
   } catch (err) {
     res.status(500).json({ error: err.message });
