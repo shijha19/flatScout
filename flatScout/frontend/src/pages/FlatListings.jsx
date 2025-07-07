@@ -1,14 +1,27 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../components/navbar";
 
 const FlatListings = () => {
   const [flats, setFlats] = useState([]);
+  const navigate = useNavigate();
   const [form, setForm] = useState({
     title: "",
     location: "",
+    address: "",
+    city: "",
+    state: "",
+    pincode: "",
     price: "",
+    bedrooms: "",
+    bathrooms: "",
+    area: "",
+    furnished: "Furnished",
     image: "",
-    description: ""
+    description: "",
+    contactName: "",
+    contactPhone: "",
+    contactEmail: ""
   });
   const [showForm, setShowForm] = useState(false);
 
@@ -31,78 +44,98 @@ const FlatListings = () => {
       setFlats([data.flat, ...flats]);
       setForm({ title: "", location: "", price: "", image: "", description: "" });
       setShowForm(false);
+      navigate("/");
     } catch (err) {
       alert(err.message);
     }
   };
 
-  // Fetch all flats on mount
-  React.useEffect(() => {
-    fetch('/api/flats')
-      .then(res => res.json())
-      .then(data => setFlats(data.flats || []));
-  }, []);
+  // No longer fetch or display flats here
 
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
       <div className="max-w-4xl mx-auto py-10 px-4">
-        <h1 className="text-4xl font-extrabold text-black mb-10 text-center tracking-tight">Flat Listings</h1>
-        <div className="flex justify-center mb-8">
-          <button
-            className="px-8 py-3 bg-blue-400 text-white rounded-full font-bold shadow-lg transition text-lg"
-            onClick={() => setShowForm((prev) => !prev)}
-          >
-            {showForm ? "Cancel" : "Create New Flat Card"}
-          </button>
-        </div>
-        {showForm && (
-          <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-2xl border border-pink-200 p-8 mb-10 space-y-6 animate-fade-in">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">Title</label>
-                <input name="title" value={form.title} onChange={handleChange} className="w-full px-4 py-2 border-2 border-pink-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300" required />
-              </div>
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">Location</label>
-                <input name="location" value={form.location} onChange={handleChange} className="w-full px-4 py-2 border-2 border-pink-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300" required />
-              </div>
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">Price</label>
-                <input name="price" value={form.price} onChange={handleChange} className="w-full px-4 py-2 border-2 border-pink-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300" required />
-              </div>
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">Image URL</label>
-                <input name="image" value={form.image} onChange={handleChange} className="w-full px-4 py-2 border-2 border-pink-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300" />
-              </div>
-
+        <h1 className="text-4xl font-extrabold text-black mb-10 text-center tracking-tight">Create New Flat Card</h1>
+        <form onSubmit={handleSubmit} className="bg-white rounded-3xl shadow-2xl border-2 border-pink-300 p-10 mb-12 space-y-8 animate-fade-in max-w-2xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <label className="block text-gray-700 font-semibold mb-2">Title</label>
+              <input name="title" value={form.title} onChange={handleChange} className="w-full px-4 py-2 border-2 border-pink-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300" required />
             </div>
             <div>
-              <label className="block text-gray-700 font-semibold mb-2">Description</label>
-              <textarea name="description" value={form.description} onChange={handleChange} className="w-full px-4 py-2 border-2 border-pink-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300" rows={3} />
+              <label className="block text-gray-700 font-semibold mb-2">Location</label>
+              <input name="location" value={form.location} onChange={handleChange} className="w-full px-4 py-2 border-2 border-pink-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300" required />
             </div>
-            <div className="flex justify-end">
-              <button type="submit" className="px-8 py-2 bg-pink-500 text-white rounded-full font-bold shadow hover:bg-pink-600 transition">Add Flat</button>
+            <div>
+              <label className="block text-gray-700 font-semibold mb-2">Address</label>
+              <input name="address" value={form.address} onChange={handleChange} className="w-full px-4 py-2 border-2 border-pink-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300" required />
             </div>
-          </form>
-        )}
-        {flats.length === 0 ? (
-          <div className="text-gray-800 text-center text-lg mt-10">No flats listed yet. Click above to add one!</div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-10">
-            {flats.map(flat => (
-              <div key={flat._id || flat.id} className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 overflow-hidden flex flex-col transition">
-                {flat.image && <img src={flat.image} alt={flat.title} className="h-52 w-full object-cover" />}
-                <div className="p-6 flex-1 flex flex-col">
-                  <h2 className="text-2xl font-bold text-black mb-1">{flat.title}</h2>
-                  <p className="text-black mb-2 font-medium">{flat.location}</p>
-                  <p className="text-black font-bold mb-2 text-lg">{flat.price}</p>
-                  <p className="text-black flex-1 mb-2">{flat.description}</p>
-                </div>
-              </div>
-            ))}
+            <div>
+              <label className="block text-gray-700 font-semibold mb-2">City</label>
+              <input name="city" value={form.city} onChange={handleChange} className="w-full px-4 py-2 border-2 border-pink-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300" required />
+            </div>
+            <div>
+              <label className="block text-gray-700 font-semibold mb-2">State</label>
+              <input name="state" value={form.state} onChange={handleChange} className="w-full px-4 py-2 border-2 border-pink-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300" required />
+            </div>
+            <div>
+              <label className="block text-gray-700 font-semibold mb-2">Pincode</label>
+              <input name="pincode" value={form.pincode} onChange={handleChange} className="w-full px-4 py-2 border-2 border-pink-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300" required />
+            </div>
+            <div>
+              <label className="block text-gray-700 font-semibold mb-2">Price (₹)</label>
+              <input name="price" value={form.price} onChange={handleChange} type="number" min="0" className="w-full px-4 py-2 border-2 border-pink-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300" required />
+            </div>
+            <div>
+              <label className="block text-gray-700 font-semibold mb-2">Bedrooms</label>
+              <input name="bedrooms" value={form.bedrooms} onChange={handleChange} type="number" min="0" className="w-full px-4 py-2 border-2 border-pink-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300" required />
+            </div>
+            <div>
+              <label className="block text-gray-700 font-semibold mb-2">Bathrooms</label>
+              <input name="bathrooms" value={form.bathrooms} onChange={handleChange} type="number" min="0" className="w-full px-4 py-2 border-2 border-pink-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300" required />
+            </div>
+            <div>
+              <label className="block text-gray-700 font-semibold mb-2">Area (sq ft)</label>
+              <input name="area" value={form.area} onChange={handleChange} type="number" min="0" className="w-full px-4 py-2 border-2 border-pink-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300" required />
+            </div>
+            <div>
+              <label className="block text-gray-700 font-semibold mb-2">Furnishing</label>
+              <select name="furnished" value={form.furnished} onChange={handleChange} className="w-full px-4 py-2 border-2 border-pink-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300" required>
+                <option value="Furnished">Furnished</option>
+                <option value="Semi-Furnished">Semi-Furnished</option>
+                <option value="Unfurnished">Unfurnished</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-gray-700 font-semibold mb-2">Image URL</label>
+              <input name="image" value={form.image} onChange={handleChange} className="w-full px-4 py-2 border-2 border-pink-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300" />
+            </div>
           </div>
-        )}
+          <div className="md:col-span-2">
+            <label className="block text-gray-700 font-semibold mb-2">Description</label>
+            <textarea name="description" value={form.description} onChange={handleChange} className="w-full px-4 py-3 border-2 border-pink-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300 resize-none" rows={4} placeholder="Describe the flat, amenities, nearby places, etc." />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div>
+              <label className="block text-gray-700 font-semibold mb-2">Contact Name</label>
+              <input name="contactName" value={form.contactName} onChange={handleChange} className="w-full px-4 py-2 border-2 border-pink-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300" required />
+            </div>
+            <div>
+              <label className="block text-gray-700 font-semibold mb-2">Contact Phone</label>
+              <input name="contactPhone" value={form.contactPhone} onChange={handleChange} className="w-full px-4 py-2 border-2 border-pink-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300" required />
+            </div>
+            <div>
+              <label className="block text-gray-700 font-semibold mb-2">Contact Email</label>
+              <input name="contactEmail" value={form.contactEmail} onChange={handleChange} type="email" className="w-full px-4 py-2 border-2 border-pink-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300" required />
+            </div>
+          </div>
+          <div className="flex justify-end md:col-span-3 mt-4">
+            <button type="submit" className="px-10 py-3 bg-gradient-to-r from-pink-500 via-fuchsia-500 to-yellow-400 hover:from-pink-600 hover:to-yellow-500 text-white font-bold rounded-full shadow-lg transition-all duration-200 text-lg font-sans border-2 border-pink-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-pink-200">
+              Add Flat
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

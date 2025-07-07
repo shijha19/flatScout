@@ -29,7 +29,6 @@ const Navbar = () => {
     { name: "Home", path: "/" },
     // Feature links only for logged in users
     ...(isLoggedIn ? [
-      { name: "Flat Listings", path: "/flat-listings" },
       { name: "Find Flatmate", path: "/find-flatmate" },
       { name: "Report Listing", path: "/report-listing" },
       { name: "Booking Calendar", path: "/booking-calendar" },
@@ -82,7 +81,7 @@ const Navbar = () => {
                 {profileOpen && (
                   <div className="absolute right-0 mt-2 w-40 bg-white border border-pink-100 rounded shadow-lg py-2 z-50">
                     <Link to="/profile" className="block px-4 py-2 text-gray-700 hover:bg-yellow-50">Profile</Link>
-                    <Link to="/settings" className="block px-4 py-2 text-gray-700 hover:bg-pink-50">Settings</Link>
+                    
                     <button className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-orange-50" onClick={handleLogout}>Logout</button>
                   </div>
                 )}

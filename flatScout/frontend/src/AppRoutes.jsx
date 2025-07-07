@@ -11,6 +11,7 @@ import FlatmateForm from './components/FlatmateForm';
 
 
 import Profile from './pages/Profile';
+import FlatDetails from './pages/FlatDetails';
 import EditProfile from './pages/EditProfile';
 import ChangePassword from './pages/ChangePassword';
 import FlatListings from './pages/FlatListings';
@@ -27,6 +28,7 @@ const AppRoutes = () => (
     <Route path="/edit-profile" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
     <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
     <Route path="/flat-listings" element={<ProtectedRoute><FlatListings /></ProtectedRoute>} />
+    <Route path="/flats/:id" element={<ProtectedRoute><FlatDetails /></ProtectedRoute>} />
     <Route path="/find-flatmate" element={<ProtectedRoute><FindFlatmates /></ProtectedRoute>} />
     <Route path="/edit-flatmate-preferences" element={<ProtectedRoute><FlatmateForm /></ProtectedRoute>} />
     <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

@@ -26,4 +26,18 @@ router.get('/', async (req, res) => {
   }
 });
 
+
+// Get a single flat listing by ID
+router.get('/:id', async (req, res) => {
+  try {
+    const flat = await FlatListing.findById(req.params.id);
+    if (!flat) {
+      return res.status(404).json({ message: 'Flat not found' });
+    }
+    res.status(200).json({ flat });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch flat', error: err.message });
+  }
+});
+
 export default router;
