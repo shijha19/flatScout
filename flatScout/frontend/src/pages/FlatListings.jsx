@@ -47,10 +47,10 @@ const FlatListings = () => {
     <div className="min-h-screen bg-white">
       <Navbar />
       <div className="max-w-4xl mx-auto py-10 px-4">
-        <h1 className="text-4xl font-extrabold text-black mb-10 text-center tracking-tight">Flat Listings</h1>
+        <h1 className="text-4xl font-extrabold text-pink-700 mb-10 text-center tracking-tight">Flat Listings</h1>
         <div className="flex justify-center mb-8">
           <button
-            className="px-8 py-3 bg-blue-400 text-white rounded-full font-bold shadow-lg transition text-lg"
+            className="px-8 py-3 bg-gradient-to-r from-pink-500 to-orange-400 text-white rounded-full font-bold shadow-lg hover:from-pink-600 hover:to-orange-500 transition text-lg"
             onClick={() => setShowForm((prev) => !prev)}
           >
             {showForm ? "Cancel" : "Create New Flat Card"}
@@ -87,17 +87,17 @@ const FlatListings = () => {
           </form>
         )}
         {flats.length === 0 ? (
-          <div className="text-gray-800 text-center text-lg mt-10">No flats listed yet. Click above to add one!</div>
+          <div className="text-gray-400 text-center text-lg mt-10">No flats listed yet. Click above to add one!</div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-10">
             {flats.map(flat => (
-              <div key={flat._id || flat.id} className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 overflow-hidden flex flex-col transition">
+              <div key={flat._id || flat.id} className="bg-white rounded-2xl shadow-xl border-2 border-pink-100 overflow-hidden flex flex-col hover:shadow-pink-200 transition">
                 {flat.image && <img src={flat.image} alt={flat.title} className="h-52 w-full object-cover" />}
                 <div className="p-6 flex-1 flex flex-col">
-                  <h2 className="text-2xl font-bold text-black mb-1">{flat.title}</h2>
-                  <p className="text-black mb-2 font-medium">{flat.location}</p>
-                  <p className="text-black font-bold mb-2 text-lg">{flat.price}</p>
-                  <p className="text-black flex-1 mb-2">{flat.description}</p>
+                  <h2 className="text-2xl font-bold text-pink-700 mb-1">{flat.title}</h2>
+                  <p className="text-gray-500 mb-2 font-medium">{flat.location}</p>
+                  <p className="text-pink-600 font-bold mb-2 text-lg">{flat.price}</p>
+                  <p className="text-gray-700 flex-1 mb-2">{flat.description}</p>
                 </div>
               </div>
             ))}
