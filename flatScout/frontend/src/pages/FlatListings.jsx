@@ -112,7 +112,7 @@ const FlatListings = () => {
               </div>
             ))}
           </div>
-        </form>
+        )}
       </div>
     </div>
   );
