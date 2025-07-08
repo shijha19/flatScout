@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from "react";
 
+
 const Profile = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [connections, setConnections] = useState([]);
+  const [connectionsLoading, setConnectionsLoading] = useState(true);
+  const [connectionsError, setConnectionsError] = useState("");
 
   useEffect(() => {
-    // Get email from localStorage or authentication context
     const email = localStorage.getItem("userEmail");
     if (!email) {
       setError("No user email found. Please log in again.");
@@ -26,6 +29,23 @@ const Profile = () => {
       .catch(() => {
         setError("Failed to load profile. Please try again.");
         setLoading(false);
+      });
+
+    // Fetch connections
+    setConnectionsLoading(true);
+    fetch(`/api/user/connections?email=${encodeURIComponent(email)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data.connections)) {
+          setConnections(data.connections);
+        } else {
+          setConnections([]);
+        }
+        setConnectionsLoading(false);
+      })
+      .catch(() => {
+        setConnectionsError("Failed to load connections.");
+        setConnectionsLoading(false);
       });
   }, []);
 
@@ -57,6 +77,28 @@ const Profile = () => {
           <span className="text-gray-700">{user.bio || "-"}</span>
         </div>
       </div>
+
+      {/* Connections Section */}
+      <div className="mt-8">
+        <h2 className="text-xl font-bold text-pink-700 mb-2">Total Connections: {connectionsLoading ? '...' : connections.length}</h2>
+        {connectionsError && <div className="text-red-500 text-sm mb-2">{connectionsError}</div>}
+        <div className="space-y-2">
+          {connectionsLoading ? (
+            <div>Loading connections...</div>
+          ) : connections.length === 0 ? (
+            <div className="text-gray-500">No connections yet.</div>
+          ) : (
+            connections.map((conn) => (
+              <div key={conn._id || conn.id || conn.email} className="flex items-center gap-3 p-2 bg-pink-50 rounded-lg">
+                <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(conn.name || 'User')}&background=F472B6&color=fff&size=48`} alt="avatar" className="w-8 h-8 rounded-full" />
+                <span className="font-semibold text-pink-700">{conn.name}</span>
+                <span className="text-gray-500 text-xs">{conn.email}</span>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
       <div className="mt-8 flex justify-center gap-4">
         <a href="/edit-profile" className="px-6 py-2 bg-violet-100 text-violet-700 rounded-lg font-semibold shadow hover:bg-violet-200 transition text-center">Edit Profile</a>
         <a href="/change-password" className="px-6 py-2 bg-red-100 text-red-700 rounded-lg font-semibold shadow hover:bg-red-200 transition text-center">Change Password</a>

@@ -1,4 +1,31 @@
+import React, { useState } from 'react';
+
 export default function FlatmateCard({ profile }) {
+  const [connecting, setConnecting] = useState(false);
+  const [connected, setConnected] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleConnect = async () => {
+    setConnecting(true);
+    setError("");
+    try {
+      const userEmail = localStorage.getItem("userEmail");
+      if (!userEmail) throw new Error("You must be logged in to connect.");
+      const res = await fetch("/api/user/connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userEmail, connectToUserId: profile.userId })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to connect");
+      setConnected(true);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setConnecting(false);
+    }
+  };
+
   return (
     <div className="border p-4 rounded-2xl bg-white shadow-md flex flex-col items-center">
       <img
@@ -20,11 +47,13 @@ export default function FlatmateCard({ profile }) {
         <span className="px-2 py-1 rounded bg-orange-100 text-orange-800 text-xs">Pets: {profile.habits?.pets || profile.pets}</span>
         <span className="px-2 py-1 rounded bg-blue-100 text-blue-800 text-xs">Sleep: {profile.habits?.sleep || profile.sleep}</span>
       </div>
+      {error && <div className="text-red-500 text-xs mb-2">{error}</div>}
       <button
-        className="mt-2 px-4 py-2 bg-pink-200 rounded-xl text-pink-800 font-semibold shadow hover:bg-pink-300 transition"
-        onClick={() => alert('Connect feature coming soon!')}
+        className="mt-2 px-4 py-2 bg-pink-200 rounded-xl text-pink-800 font-semibold shadow hover:bg-pink-300 transition disabled:opacity-50"
+        onClick={handleConnect}
+        disabled={connecting || connected}
       >
-        Connect
+        {connected ? "Connected" : connecting ? "Connecting..." : "Connect"}
       </button>
     </div>
   );
