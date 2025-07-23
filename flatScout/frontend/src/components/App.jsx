@@ -1,6 +1,12 @@
 import Navbar from "./navbar";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import MapComponent from '../components/MapComponent';
+
+const dummyListings = [
+  { name: "PG Alpha", latitude: 28.6139, longitude: 77.2090 },
+  { name: "PG Beta", latitude: 19.0760, longitude: 72.8777 },
+];
 
 export default function App() {
   const [username, setUsername] = useState("Guest");
@@ -115,6 +121,8 @@ export default function App() {
               </button>
             </form>
           </div>
+          <MapComponent listings={dummyListings} />
+
           {/* Section Navigation Buttons removed */}
           {/* Main Content: All Flats as Cards */}
           <main className="flex-1 p-8 w-full">
