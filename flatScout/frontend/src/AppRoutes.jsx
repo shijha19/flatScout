@@ -17,6 +17,7 @@ import ChangePassword from './pages/ChangePassword';
 import FlatListings from './pages/FlatListings';
 import OAuthSuccess from './pages/OAuthSuccess';
 import Dashboard from './pages/Dashboard';
+import FlatmateProfile from './pages/FlatmateProfile';
 
 const AppRoutes = () => (
   <Routes>
@@ -30,6 +31,7 @@ const AppRoutes = () => (
     <Route path="/flat-listings" element={<ProtectedRoute><FlatListings /></ProtectedRoute>} />
     <Route path="/flats/:id" element={<ProtectedRoute><FlatDetails /></ProtectedRoute>} />
     <Route path="/find-flatmate" element={<ProtectedRoute><FindFlatmates /></ProtectedRoute>} />
+    <Route path="/flatmate/:userId" element={<ProtectedRoute><FlatmateProfile /></ProtectedRoute>} />
     <Route path="/edit-flatmate-preferences" element={<ProtectedRoute><FlatmateForm /></ProtectedRoute>} />
     <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
     {/* OAuth success must be public so it can set login state */}

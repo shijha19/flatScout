@@ -8,6 +8,8 @@ import userRoutes from './routes/userRoutes.js';
 import flatListingRoutes from './routes/flatListingRoutes.js';
 import flatmateRoutes from './routes/flatmate.js';
 import authRoutes from './routes/auth.js';
+import notificationRoutes from './routes/notification.js';
+import connectionRequestRoutes from './routes/connectionRequest.js';
 import './config/passport.js';
 dotenv.config();
 
@@ -34,6 +36,8 @@ app.use('/api/pg', pgRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/flats', flatListingRoutes);
 app.use('/api/flatmates', flatmateRoutes);
+app.use('/api/notification', notificationRoutes);
+app.use('/api/connection', connectionRequestRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {

@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import FlatmateCard from "../components/FlatmateCard";
+import { useEffect as useEffect2, useState as useState2 } from "react";
+import { fetchUserConnections } from "../utils/connections";
 import Navbar from "./navbar";
 
 export default function FindFlatmates() {
-	const [flatmates, setFlatmates] = useState([]);
-	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState(null);
-	const navigate = useNavigate();
+  const [flatmates, setFlatmates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [connections, setConnections] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
 	const userId = localStorage.getItem("userId");
@@ -30,6 +33,8 @@ export default function FindFlatmates() {
 		setFlatmates([]);
 		setLoading(false);
 	  });
+	// Fetch connections for the logged-in user
+	fetchUserConnections().then(setConnections);
   }, []);
 
 	if (loading)
@@ -71,20 +76,23 @@ export default function FindFlatmates() {
 							</button>
 						</div>
 					) : (
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-							{flatmates.map((f, i) => (
-								<div key={i}>
-									{f.compatibility !== undefined && (
-										<div className="mb-2 flex justify-center">
-											<span className="inline-block px-3 py-1 rounded-full bg-pink-100 text-pink-700 font-bold text-sm shadow">
-												Compatibility: {f.compatibility}%
-											</span>
-										</div>
-									)}
-									<FlatmateCard profile={f} />
-								</div>
-							))}
-						</div>
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+				  {flatmates.map((f, i) => {
+					const isConnected = connections.includes(f._id);
+					return (
+					  <div key={i}>
+						{f.compatibility !== undefined && (
+						  <div className="mb-2 flex justify-center">
+							<span className="inline-block px-3 py-1 rounded-full bg-pink-100 text-pink-700 font-bold text-sm shadow">
+							  Compatibility: {f.compatibility}%
+							</span>
+						  </div>
+						)}
+						<FlatmateCard profile={f} alreadyConnected={isConnected} />
+					  </div>
+					);
+				  })}
+				</div>
 					)}
 				</div>
 			</div>

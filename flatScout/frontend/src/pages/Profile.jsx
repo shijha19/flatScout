@@ -37,7 +37,11 @@ const Profile = () => {
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data.connections)) {
-          setConnections(data.connections);
+          // Only count real users (with valid email and name)
+          const realConnections = data.connections.filter(
+            (c) => c && c.email && c.name && c.email.includes('@') && c.name.length > 0
+          );
+          setConnections(realConnections);
         } else {
           setConnections([]);
         }
