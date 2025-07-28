@@ -15,7 +15,19 @@ export default function FlatmateCard({ profile, alreadyConnected }) {
         const userEmail = localStorage.getItem("userEmail");
         if (!userEmail) return;
         
-        const connectToUserId = profile._id || profile.userId;
+        // Prioritize using the document's _id (which is always a valid ObjectId)
+        // Fall back to userId only if _id is not available and is in ObjectId format
+        let connectToUserId = profile._id;
+        if (!connectToUserId) {
+          const userId = profile.userId;
+          if (userId && /^[a-fA-F0-9]{24}$/.test(userId)) {
+            connectToUserId = userId;
+          } else if (profile.userEmail) {
+            // As a last resort, use userEmail (backend can handle this now)
+            connectToUserId = profile.userEmail;
+          }
+        }
+        
         if (!connectToUserId) return;
 
         const res = await fetch(`/api/connection/connection-status?userEmail=${encodeURIComponent(userEmail)}&targetUserId=${connectToUserId}`);
@@ -43,12 +55,20 @@ export default function FlatmateCard({ profile, alreadyConnected }) {
       const userEmail = localStorage.getItem("userEmail");
       if (!userEmail) throw new Error("You must be logged in to connect.");
       
-      // Use _id if available, fallback to userId
-      const connectToUserId = profile._id || profile.userId;
-      
-      // Validate ObjectId format (24 hex chars)
-      if (!connectToUserId || !/^[a-fA-F0-9]{24}$/.test(connectToUserId)) {
-        throw new Error("Invalid user id for connection. Please try again later.");
+      // Always use actualUserId (the receiver's User ObjectId) if available
+      let connectToUserId = profile.actualUserId;
+      // Fallbacks for legacy data
+      if (!connectToUserId) {
+        if (profile._id && /^[a-fA-F0-9]{24}$/.test(profile._id)) {
+          connectToUserId = profile._id;
+        } else if (profile.userId && /^[a-fA-F0-9]{24}$/.test(profile.userId)) {
+          connectToUserId = profile.userId;
+        } else if (profile.userEmail) {
+          connectToUserId = profile.userEmail;
+        }
+      }
+      if (!connectToUserId) {
+        throw new Error("Unable to connect to this user. Profile data may be incomplete.");
       }
       
       const res = await fetch("/api/connection/send-request", {
@@ -102,10 +122,37 @@ export default function FlatmateCard({ profile, alreadyConnected }) {
     <div
       className="group border p-5 rounded-3xl bg-gradient-to-br from-pink-50 to-yellow-50 shadow-lg flex flex-col items-center cursor-pointer hover:scale-105 hover:shadow-2xl transition-all duration-200 relative"
       onClick={() => {
+        // Use actualUserId if available (this is the User's _id from backend enhancement)
+        // Otherwise, prioritize using the document's _id, fall back to userId if it's in ObjectId format
+        let navId = profile.actualUserId || profile._id;
+        if (!navId) {
+          const userId = profile.userId;
+          if (userId && /^[a-fA-F0-9]{24}$/.test(userId)) {
+            navId = userId;
+          } else if (profile.userEmail) {
+            // For navigation with email, we need to encode it properly
+            navId = encodeURIComponent(profile.userEmail);
+          } else if (userId) {
+            // Last resort: try the userId even if it's not ObjectId format
+            navId = encodeURIComponent(userId);
+          }
+        }
+        
         // Debug log to see what we're navigating with
-        const navId = profile.userId || profile._id;
-        console.log('Navigating to flatmate profile with ID:', navId, 'profile:', profile);
-        navigate(`/flatmate/${navId}`);
+        console.log('Navigating to flatmate profile with ID:', navId, 'original profile:', {
+          actualUserId: profile.actualUserId,
+          _id: profile._id,
+          userId: profile.userId,
+          userEmail: profile.userEmail,
+          name: profile.name
+        });
+        
+        if (navId) {
+          navigate(`/flatmate/${navId}`);
+        } else {
+          console.error('Cannot navigate: no valid user ID found', profile);
+          alert('Unable to view this profile. Profile data may be incomplete.');
+        }
       }}
       title="Click to view full profile"
     >

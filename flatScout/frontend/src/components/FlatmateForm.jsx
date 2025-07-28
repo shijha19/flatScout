@@ -41,8 +41,14 @@ export default function FlatmateForm() {
     let userId = localStorage.getItem("userId");
     const name = localStorage.getItem("name") || "";
     const userEmail = localStorage.getItem("userEmail") || "";
-    // Fallback: use email as userId if userId is missing
-    if (!userId && userEmail) userId = userEmail;
+    
+    // Only fall back to email as userId if userId is completely missing
+    // This prevents mixing ObjectId and email formats
+    if (!userId && userEmail) {
+      console.warn("No userId found, using email as fallback. This may cause connection issues.");
+      userId = userEmail;
+    }
+    
     if (userId) setForm(f => ({ ...f, userId, name, userEmail }));
     // Optionally fetch existing profile here
   }, []);

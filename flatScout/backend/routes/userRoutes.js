@@ -3,6 +3,19 @@ import User from "../models/user.models.js";
 
 const router = express.Router();
 
+// Get user by email - needed for notifications
+router.get("/by-email/:email", async (req, res) => {
+  const { email } = req.params;
+  if (!email) return res.status(400).json({ message: "Email is required." });
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found." });
+    res.status(200).json({ user: { _id: user._id, name: user.name, email: user.email } });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
 // Add a connection (user connects to another user)
 router.post("/connect", async (req, res) => {
   const { userEmail, connectToUserId } = req.body;

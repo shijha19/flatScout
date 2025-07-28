@@ -19,21 +19,38 @@ router.post("/send-request", async (req, res) => {
       return res.status(404).json({ message: "User not found." });
     }
 
-    // Validate the target user ID format
     const mongoose = (await import('mongoose')).default;
-    if (!mongoose.Types.ObjectId.isValid(connectToUserId)) {
-      return res.status(400).json({ message: "Invalid user id format." });
+    let toUser = null;
+
+    // Try to find target user - first by ObjectId if valid, then by other means
+    if (mongoose.Types.ObjectId.isValid(connectToUserId)) {
+      // Try to find by MongoDB ObjectId
+      toUser = await User.findById(connectToUserId);
+    }
+    
+    // If not found by ObjectId, try to find by email (in case connectToUserId is an email)
+    if (!toUser && connectToUserId.includes('@')) {
+      toUser = await User.findOne({ email: connectToUserId });
+    }
+    
+    // If still not found, try to find through FlatmateProfile
+    if (!toUser) {
+      const FlatmateProfile = (await import('../models/FlatmateProfile.js')).default;
+      
+      // Find FlatmateProfile that has this userId (could be ObjectId or email)
+      const flatmateProfile = await FlatmateProfile.findOne({ userId: connectToUserId });
+      if (flatmateProfile && flatmateProfile.userEmail) {
+        toUser = await User.findOne({ email: flatmateProfile.userEmail });
+      }
     }
 
-    // Check if target user exists
-    const toUser = await User.findById(connectToUserId);
     if (!toUser) {
       return res.status(404).json({ message: "Target user not found." });
     }
 
     // Check if users are already connected
     const fromUserObjId = fromUser._id;
-    const toUserObjId = new mongoose.Types.ObjectId(connectToUserId);
+    const toUserObjId = toUser._id;
     
     if (fromUser.connections.some(id => id.equals(toUserObjId))) {
       return res.status(409).json({ message: "Already connected to this user." });
@@ -215,11 +232,35 @@ router.get("/connection-status", async (req, res) => {
     }
 
     const mongoose = (await import('mongoose')).default;
-    if (!mongoose.Types.ObjectId.isValid(targetUserId)) {
-      return res.status(400).json({ message: "Invalid target user id format." });
+    let targetUser = null;
+
+    // Try to find target user - first by ObjectId if valid, then by other means
+    if (mongoose.Types.ObjectId.isValid(targetUserId)) {
+      // Try to find by MongoDB ObjectId
+      targetUser = await User.findById(targetUserId);
+    }
+    
+    // If not found by ObjectId, try to find by email (in case targetUserId is an email)
+    if (!targetUser && targetUserId.includes('@')) {
+      targetUser = await User.findOne({ email: targetUserId });
+    }
+    
+    // If still not found, try to find through FlatmateProfile
+    if (!targetUser) {
+      const FlatmateProfile = (await import('../models/FlatmateProfile.js')).default;
+      
+      // Find FlatmateProfile that has this userId (could be ObjectId or email)
+      const flatmateProfile = await FlatmateProfile.findOne({ userId: targetUserId });
+      if (flatmateProfile && flatmateProfile.userEmail) {
+        targetUser = await User.findOne({ email: flatmateProfile.userEmail });
+      }
     }
 
-    const targetUserObjId = new mongoose.Types.ObjectId(targetUserId);
+    if (!targetUser) {
+      return res.status(404).json({ message: "Target user not found." });
+    }
+
+    const targetUserObjId = targetUser._id;
 
     // Check if already connected
     const isConnected = user.connections.some(id => id.equals(targetUserObjId));

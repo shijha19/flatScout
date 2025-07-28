@@ -12,9 +12,11 @@ export default function FlatmateProfile() {
   const [connectionStatus, setConnectionStatus] = useState('not_connected');
 
   useEffect(() => {
-    console.log('FlatmateProfile loading with userId:', userId);
+    // Decode the userId in case it's URL-encoded (e.g., if it's an email)
+    const decodedUserId = decodeURIComponent(userId);
+    console.log('FlatmateProfile loading with userId:', userId, 'decoded:', decodedUserId);
     setLoading(true);
-    fetch(`/api/flatmates/profile/full/${userId}`)
+    fetch(`/api/flatmates/profile/full/${encodeURIComponent(decodedUserId)}`)
       .then(res => res.json())
       .then(res => {
         console.log('FlatmateProfile API response:', res);
@@ -40,7 +42,8 @@ export default function FlatmateProfile() {
       const userEmail = localStorage.getItem("userEmail");
       if (!userEmail) return;
 
-      const res = await fetch(`/api/connection/connection-status?userEmail=${encodeURIComponent(userEmail)}&targetUserId=${userId}`);
+      const decodedUserId = decodeURIComponent(userId);
+      const res = await fetch(`/api/connection/connection-status?userEmail=${encodeURIComponent(userEmail)}&targetUserId=${encodeURIComponent(decodedUserId)}`);
       const data = await res.json();
       
       if (res.ok) {
@@ -57,10 +60,11 @@ export default function FlatmateProfile() {
       const userEmail = localStorage.getItem("userEmail");
       if (!userEmail) throw new Error("You must be logged in to connect.");
       
+      const decodedUserId = decodeURIComponent(userId);
       const res = await fetch("/api/connection/send-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userEmail, connectToUserId: userId })
+        body: JSON.stringify({ userEmail, connectToUserId: decodedUserId })
       });
       const responseData = await res.json();
       if (!res.ok) throw new Error(responseData.message || "Failed to send connection request");

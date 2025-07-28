@@ -11,24 +11,64 @@ const Navbar = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [processingRequest, setProcessingRequest] = useState(null);
 
-  useEffect(() => {
-    setIsLoggedIn(!!localStorage.getItem('userLoggedIn'));
-    // Fetch notifications if logged in
-    const fetchNotifications = async () => {
-      const userId = localStorage.getItem('userId');
-      if (!userId) return;
+  // Fetch notifications function - moved outside useEffect so it can be called from bell icon
+  const fetchNotifications = async () => {
+    // Always use the ObjectId for the logged-in user
+    let userId = localStorage.getItem('userId');
+    console.log('[Navbar] localStorage userId:', userId);
+    
+    // If userId is not a valid ObjectId, try to get it from the user object in localStorage
+    if (!userId || !/^[a-fA-F0-9]{24}$/.test(userId)) {
       try {
-        const res = await fetch(`/api/notification/notifications?userId=${userId}`);
-        const data = await res.json();
-        if (Array.isArray(data.notifications)) {
-          setNotifications(data.notifications);
-        } else {
-          setNotifications([]);
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (user && user._id && /^[a-fA-F0-9]{24}$/.test(user._id)) {
+          userId = user._id;
         }
-      } catch {
+      } catch {}
+    }
+    
+    // If we still don't have userId, try to get it using the email
+    if (!userId) {
+      const userEmail = localStorage.getItem('userEmail');
+      if (userEmail) {
+        try {
+          console.log('[Navbar] Fetching userId using email:', userEmail);
+          const res = await fetch(`/api/user/by-email/${encodeURIComponent(userEmail)}`);
+          const data = await res.json();
+          if (data.user && data.user._id) {
+            userId = data.user._id;
+            // Store it for future use
+            localStorage.setItem('userId', userId);
+            console.log('[Navbar] Got userId from email lookup:', userId);
+          }
+        } catch (err) {
+          console.error('[Navbar] Error fetching userId by email:', err);
+        }
+      }
+    }
+    
+    console.log('[Navbar] fetchNotifications called with userId:', userId);
+    if (!userId) {
+      console.log('[Navbar] No valid userId found, cannot fetch notifications');
+      return;
+    }
+    try {
+      const res = await fetch(`/api/notification/notifications?userId=${userId}`);
+      const data = await res.json();
+      console.log('[Navbar] notification response:', data);
+      if (Array.isArray(data.notifications)) {
+        setNotifications(data.notifications);
+      } else {
         setNotifications([]);
       }
-    };
+    } catch (err) {
+      console.error('[Navbar] fetchNotifications error:', err);
+      setNotifications([]);
+    }
+  };
+
+  useEffect(() => {
+    setIsLoggedIn(!!localStorage.getItem('userLoggedIn'));
     if (isLoggedIn) fetchNotifications();
   }, [location, isLoggedIn]);
 
@@ -120,7 +160,11 @@ const Navbar = () => {
               <>
                 <div className="relative ml-4">
                   <button
-                    onClick={() => setShowNotifications((prev) => !prev)}
+                    onClick={() => {
+                      console.log('[Navbar] Bell icon clicked');
+                      setShowNotifications((prev) => !prev);
+                      fetchNotifications(); // Fetch notifications when bell is clicked
+                    }}
                     className="relative focus:outline-none"
                     aria-label="Notifications"
                   >
@@ -145,25 +189,31 @@ const Navbar = () => {
                                   <span className="font-semibold text-pink-700">{n.name}</span>
                                   <span className="text-gray-500 text-xs">({n.email})</span>
                                 </div>
-                                <p className="text-xs text-gray-600">wants to connect with you</p>
+                                {n.direction === "received" ? (
+                                  <p className="text-xs text-gray-600">wants to connect with you</p>
+                                ) : (
+                                  <p className="text-xs text-gray-600">You sent a request to this user</p>
+                                )}
                               </div>
                             </div>
-                            <div className="flex gap-2 mt-2">
-                              <button
-                                onClick={() => handleConnectionResponse(n._id, 'accept')}
-                                disabled={processingRequest === n._id}
-                                className="px-3 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600 transition disabled:opacity-50"
-                              >
-                                {processingRequest === n._id ? 'Processing...' : 'Accept'}
-                              </button>
-                              <button
-                                onClick={() => handleConnectionResponse(n._id, 'decline')}
-                                disabled={processingRequest === n._id}
-                                className="px-3 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition disabled:opacity-50"
-                              >
-                                {processingRequest === n._id ? 'Processing...' : 'Decline'}
-                              </button>
-                            </div>
+                            {n.direction === "received" && (
+                              <div className="flex gap-2 mt-2">
+                                <button
+                                  onClick={() => handleConnectionResponse(n._id, 'accept')}
+                                  disabled={processingRequest === n._id}
+                                  className="px-3 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600 transition disabled:opacity-50"
+                                >
+                                  {processingRequest === n._id ? 'Processing...' : 'Accept'}
+                                </button>
+                                <button
+                                  onClick={() => handleConnectionResponse(n._id, 'decline')}
+                                  disabled={processingRequest === n._id}
+                                  className="px-3 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition disabled:opacity-50"
+                                >
+                                  {processingRequest === n._id ? 'Processing...' : 'Decline'}
+                                </button>
+                              </div>
+                            )}
                           </div>
                         ))
                       )}
