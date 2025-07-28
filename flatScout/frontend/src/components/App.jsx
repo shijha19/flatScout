@@ -121,7 +121,11 @@ export default function App() {
               </button>
             </form>
           </div>
-          <MapComponent listings={dummyListings} />
+          <div className="flex justify-center w-full my-8">
+            <div className="bg-white rounded-xl shadow-lg p-4 w-full max-w-3xl border border-gray-200">
+              <MapComponent />
+            </div>
+          </div>
 
           {/* Section Navigation Buttons removed */}
           {/* Main Content: All Flats as Cards */}

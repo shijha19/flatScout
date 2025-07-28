@@ -1,29 +1,37 @@
 import React from 'react';
-import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
-const containerStyle = {
-  width: '100%',
-  height: '500px'
-};
 
-const center = {
-  lat: 21.1458, // default location (India center)
-  lng: 79.0882
-};
 
-const MapComponent = ({ listings = [] }) => {
+const center = [21.1458, 79.0882]; // India center
+
+
+const locations = [
+  { name: 'NIT Raipur', position: [21.2497, 81.6051], isNit: true },
+  { name: 'Hostel A (Near NIT)', position: [21.2502, 81.6060] },
+  { name: 'Hostel B (Near NIT)', position: [21.2490, 81.6045] },
+  { name: 'Hostel C (Near NIT)', position: [21.2505, 81.6070] },
+  { name: 'Hostel D (Near NIT)', position: [21.2485, 81.6055] }
+];
+
+const MapComponent = () => {
   return (
-    <LoadScript googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}>
-      <GoogleMap mapContainerStyle={containerStyle} center={center} zoom={5}>
-        {listings.map((listing, index) => (
-          <Marker
-            key={index}
-            position={{ lat: listing.latitude, lng: listing.longitude }}
-            title={listing.name}
-          />
-        ))}
-      </GoogleMap>
-    </LoadScript>
+    <MapContainer center={[21.2514, 81.6296]} zoom={13} style={{ width: '100%', height: '500px' }}>
+      <TileLayer
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution="&copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors"
+      />
+      {locations.map((loc, idx) => (
+        <Marker
+          key={idx}
+          position={loc.position}
+        >
+          <Popup>{loc.name}</Popup>
+        </Marker>
+      ))}
+    </MapContainer>
   );
 };
 
