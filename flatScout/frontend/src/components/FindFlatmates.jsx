@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import FlatmateCard from "../components/FlatmateCard";
 import { useEffect as useEffect2, useState as useState2 } from "react";
 import { fetchUserConnections } from "../utils/connections";
-import Navbar from "./navbar";
 
 export default function FindFlatmates() {
   const [flatmates, setFlatmates] = useState([]);
@@ -44,7 +43,6 @@ export default function FindFlatmates() {
 
 	return (
 		<div className="min-h-screen bg-white">
-			<Navbar />
 			<div className="flex flex-col items-center justify-center">
 				<button
 					className="mt-8 mb-4 px-4 py-2 bg-blue-200 text-blue-800 rounded-xl font-semibold shadow hover:bg-blue-300 transition self-start ml-12"

@@ -10,6 +10,7 @@ import flatmateRoutes from './routes/flatmate.js';
 import authRoutes from './routes/auth.js';
 import notificationRoutes from './routes/notification.js';
 import connectionRequestRoutes from './routes/connectionRequest.js';
+import bookingRoutes from './routes/booking.js';
 import './config/passport.js';
 dotenv.config();
 
@@ -38,6 +39,7 @@ app.use('/api/flats', flatListingRoutes);
 app.use('/api/flatmates', flatmateRoutes);
 app.use('/api/notification', notificationRoutes);
 app.use('/api/connection', connectionRequestRoutes);
+app.use('/api/booking', bookingRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {

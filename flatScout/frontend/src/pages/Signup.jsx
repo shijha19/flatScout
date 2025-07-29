@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const Signup = () => {
   const [name, setName] = useState('');
@@ -7,6 +8,7 @@ const Signup = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,8 +32,18 @@ const Signup = () => {
       });
       const data = await response.json();
       if (response.ok) {
-        setSuccess('Signup successful! You can now log in.');
+        // Store user data in localStorage for the flatmate form
+        localStorage.setItem('userId', data.user._id);
+        localStorage.setItem('userEmail', data.user.email);
+        localStorage.setItem('name', data.user.name);
+        
+        setSuccess('Account created! Setting up your preferences...');
         setError('');
+        
+        // Redirect to flatmate preferences form after a brief delay
+        setTimeout(() => {
+          navigate('/edit-flatmate-preferences');
+        }, 1500);
       } else {
         setError(data.message || 'Signup failed.');
         setSuccess('');

@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import Navbar from "../components/navbar";
 
 export default function FlatmateProfile() {
   const { userId } = useParams();
@@ -104,7 +103,6 @@ export default function FlatmateProfile() {
 
   if (loading) return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
       <div className="flex justify-center items-center h-64">
         <div className="text-center">Loading...</div>
       </div>
@@ -113,7 +111,6 @@ export default function FlatmateProfile() {
   
   if (error) return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
       <div className="flex justify-center items-center h-64">
         <div className="text-center text-red-600">{error}</div>
       </div>
@@ -126,7 +123,6 @@ export default function FlatmateProfile() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
       <div className="max-w-4xl mx-auto py-8 px-4">
         {/* Back Button */}
         <button 

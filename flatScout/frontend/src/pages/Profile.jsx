@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import Navbar from "../components/navbar";
 
 
 const Profile = () => {
@@ -62,7 +61,6 @@ const Profile = () => {
 
   return (
     <>
-      <Navbar />
       <div className="max-w-2xl mx-auto mt-10 p-8 bg-white rounded-2xl shadow-lg border border-pink-100">
         <div className="flex flex-col items-center">
           <img src={avatar} alt="Profile" className="w-28 h-28 rounded-full border-4 border-pink-200 shadow mb-4" />

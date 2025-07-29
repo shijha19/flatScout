@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import Navbar from "../components/navbar";
 
 export default function FlatDetails() {
   const { id } = useParams();
@@ -33,7 +32,6 @@ export default function FlatDetails() {
 
   return (
     <>
-      <Navbar />
       <div className="min-h-screen bg-gradient-to-br from-pink-50 via-yellow-50 to-white flex flex-col items-center py-12 px-4">
         <div className="max-w-3xl w-full bg-white rounded-3xl shadow-2xl border-2 border-pink-200 p-10">
           <button onClick={() => navigate(-1)} className="mb-8 text-base text-pink-600 hover:underline font-semibold">&larr; Back to Listings</button>

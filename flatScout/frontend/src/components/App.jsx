@@ -1,4 +1,3 @@
-import Navbar from "./navbar";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import MapComponent from '../components/MapComponent';
@@ -85,7 +84,6 @@ export default function App() {
 
   return (
     <>
-      <Navbar />
       <div className="min-h-screen flex flex-col bg-white font-sans">
         {/* Hero Banner */}
         <div className="w-full flex justify-center items-center bg-white py-14 mb-0">

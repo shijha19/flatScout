@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../components/navbar";
 
 const FlatListings = () => {
   const [flats, setFlats] = useState([]);
@@ -54,7 +53,6 @@ const FlatListings = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <Navbar />
       <div className="max-w-4xl mx-auto py-10 px-4">
         <h1 className="text-4xl font-extrabold text-black mb-10 text-center tracking-tight">Flat Listings</h1>
         <div className="flex justify-center mb-8">

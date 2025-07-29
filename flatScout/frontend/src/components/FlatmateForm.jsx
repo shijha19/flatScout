@@ -35,12 +35,18 @@ export default function FlatmateForm() {
   });
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [isNewUser, setIsNewUser] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     let userId = localStorage.getItem("userId");
     const name = localStorage.getItem("name") || "";
     const userEmail = localStorage.getItem("userEmail") || "";
+    
+    // Check if this is a new user (just signed up)
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromSignup = urlParams.get('from') === 'signup' || !localStorage.getItem('hasCompletedPreferences');
+    setIsNewUser(fromSignup);
     
     // Only fall back to email as userId if userId is completely missing
     // This prevents mixing ObjectId and email formats
@@ -80,9 +86,18 @@ export default function FlatmateForm() {
         name: form.name || localStorage.getItem("name") || "User",
       });
       setSuccess(true);
+      // Mark that user has completed preferences
+      localStorage.setItem('hasCompletedPreferences', 'true');
+      
       setTimeout(() => {
         setSuccess(false);
-        navigate("/find-flatmate", { replace: true });
+        if (isNewUser) {
+          // For new users, redirect to home page after completing preferences
+          navigate("/", { replace: true });
+        } else {
+          // For existing users editing preferences, go to find flatmate page
+          navigate("/find-flatmate", { replace: true });
+        }
       }, 1000);
     } catch (err) {
       setError("Could not save preferences");
@@ -91,9 +106,17 @@ export default function FlatmateForm() {
   };
 
   return (
-    <div className="p-4 sm:p-8 max-w-2xl mx-auto bg-gradient-to-br from-blue-50 via-pink-50 to-yellow-50 rounded-2xl shadow-2xl mt-10 border border-pink-100">
-      <h2 className="text-2xl font-extrabold mb-2 text-center text-blue-700 drop-shadow">Edit Flatmate Preferences</h2>
-      <p className="text-gray-500 mb-6 text-center">Tell us more about yourself to find the best flatmates!</p>
+    <>
+      <div className="p-4 sm:p-8 max-w-2xl mx-auto bg-gradient-to-br from-blue-50 via-pink-50 to-yellow-50 rounded-2xl shadow-2xl mt-10 border border-pink-100">
+        <h2 className="text-2xl font-extrabold mb-2 text-center text-blue-700 drop-shadow">
+          {isNewUser ? "Welcome! Set Up Your Profile" : "Edit Flatmate Preferences"}
+        </h2>
+        <p className="text-gray-500 mb-6 text-center">
+          {isNewUser 
+            ? "Let's get to know you better to help you find the perfect flatmates!" 
+            : "Tell us more about yourself to find the best flatmates!"
+          }
+        </p>
       <form onSubmit={submitForm} className="flex flex-col gap-6">
         {/* Personal Info */}
         <div>
@@ -269,9 +292,10 @@ export default function FlatmateForm() {
         {error && <div className="text-red-500 text-center font-medium">{error}</div>}
         {success && <div className="text-green-600 text-center font-medium">Preferences saved!</div>}
         <button type="submit" className="bg-gradient-to-r from-orange-400 to-pink-500 text-white px-6 py-2 rounded-full mt-2 font-bold shadow hover:from-orange-500 hover:to-pink-600 transition-all">
-          Save Preferences
+          {isNewUser ? "Complete Setup" : "Save Preferences"}
         </button>
       </form>
-    </div>
+      </div>
+    </>
   );
 }
