@@ -36,13 +36,16 @@ const Signup = () => {
         localStorage.setItem('userId', data.user._id);
         localStorage.setItem('userEmail', data.user.email);
         localStorage.setItem('name', data.user.name);
+        localStorage.setItem('userLoggedIn', 'true');
+        // Mark this as a new user who needs to complete preferences
+        localStorage.removeItem('hasCompletedPreferences');
         
-        setSuccess('Account created! Setting up your preferences...');
+        setSuccess('Account created! Let\'s set up your flatmate preferences...');
         setError('');
         
         // Redirect to flatmate preferences form after a brief delay
         setTimeout(() => {
-          navigate('/edit-flatmate-preferences');
+          navigate('/edit-flatmate-preferences?from=signup');
         }, 1500);
       } else {
         setError(data.message || 'Signup failed.');

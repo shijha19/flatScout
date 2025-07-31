@@ -26,10 +26,19 @@ const LoginSignup = () => {
       alert(`Logged in as ${data.user.name} (${data.user.email})`);
       localStorage.setItem('userLoggedIn', 'true');
       localStorage.setItem('userEmail', data.user.email); // Store email for profile fetch
+      localStorage.setItem('name', data.user.name);
       if (data.user && data.user._id) {
         localStorage.setItem('userId', data.user._id);
       }
-      navigate('/'); // Redirect to dashboard
+      
+      // Check if user has completed preferences, if not redirect to preferences form
+      // For existing users, we'll assume they need to complete preferences if flag is not set
+      const hasCompletedPreferences = localStorage.getItem('hasCompletedPreferences');
+      if (!hasCompletedPreferences) {
+        navigate('/edit-flatmate-preferences?from=login');
+      } else {
+        navigate('/'); // Redirect to home page
+      }
     } catch (err) {
       setError(err.message);
     }

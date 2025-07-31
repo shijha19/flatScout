@@ -2,6 +2,7 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
+import FlatmateProtectedRoute from './components/FlatmateProtectedRoute';
 import Layout from './components/Layout';
 import App from './components/App';
 import LoginPage from './pages/LoginPage';
@@ -38,8 +39,8 @@ const AppRoutes = () => (
       <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
       <Route path="/flat-listings" element={<ProtectedRoute><FlatListings /></ProtectedRoute>} />
       <Route path="/flats/:id" element={<ProtectedRoute><FlatDetails /></ProtectedRoute>} />
-      <Route path="/find-flatmate" element={<ProtectedRoute><FindFlatmates /></ProtectedRoute>} />
-      <Route path="/flatmate/:userId" element={<ProtectedRoute><FlatmateProfile /></ProtectedRoute>} />
+      <Route path="/find-flatmate" element={<FlatmateProtectedRoute><FindFlatmates /></FlatmateProtectedRoute>} />
+      <Route path="/flatmate/:userId" element={<FlatmateProtectedRoute><FlatmateProfile /></FlatmateProtectedRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/booking-calendar" element={<ProtectedRoute><BookingCalendar /></ProtectedRoute>} />
       <Route path="/report-listing" element={<ProtectedRoute><ReportListing /></ProtectedRoute>} />

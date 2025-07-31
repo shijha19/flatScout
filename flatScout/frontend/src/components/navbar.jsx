@@ -127,7 +127,7 @@ const Navbar = () => {
   ];
 
   return (
-    <nav className="bg-white border-b border-yellow-100 shadow-md sticky top-0 z-50">
+    <nav className="bg-white border-b border-yellow-100 shadow-md fixed top-0 w-full z-[9999]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           {/* Logo/Brand */}
@@ -176,7 +176,7 @@ const Navbar = () => {
                     )}
                   </button>
                   {showNotifications && (
-                    <div className="absolute right-0 mt-2 w-80 bg-white border border-pink-100 rounded shadow-lg py-2 z-50 max-h-80 overflow-y-auto">
+                    <div className="absolute right-0 mt-2 w-80 bg-white border border-pink-100 rounded shadow-lg py-2 z-[10000] max-h-80 overflow-y-auto">
                       <div className="px-4 py-2 font-bold text-pink-700 border-b">Connection Requests</div>
                       {notifications.length === 0 ? (
                         <div className="px-4 py-2 text-gray-500">No new connection requests.</div>
@@ -232,7 +232,7 @@ const Navbar = () => {
                     />
                   </button>
                   {profileOpen && (
-                    <div className="absolute right-0 mt-2 w-40 bg-white border border-pink-100 rounded shadow-lg py-2 z-50">
+                    <div className="absolute right-0 mt-2 w-40 bg-white border border-pink-100 rounded shadow-lg py-2 z-[10000]">
                       <Link to="/profile" className="block px-4 py-2 text-gray-700 hover:bg-yellow-50">Profile</Link>
                       <button className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-orange-50" onClick={handleLogout}>Logout</button>
                     </div>

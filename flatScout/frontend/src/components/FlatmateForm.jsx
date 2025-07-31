@@ -36,6 +36,7 @@ export default function FlatmateForm() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const [isNewUser, setIsNewUser] = useState(false);
+  const [fromSource, setFromSource] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -45,8 +46,10 @@ export default function FlatmateForm() {
     
     // Check if this is a new user (just signed up)
     const urlParams = new URLSearchParams(window.location.search);
-    const fromSignup = urlParams.get('from') === 'signup' || !localStorage.getItem('hasCompletedPreferences');
+    const fromSource = urlParams.get('from');
+    const fromSignup = fromSource === 'signup' || !localStorage.getItem('hasCompletedPreferences');
     setIsNewUser(fromSignup);
+    setFromSource(fromSource || '');
     
     // Only fall back to email as userId if userId is completely missing
     // This prevents mixing ObjectId and email formats
@@ -92,13 +95,13 @@ export default function FlatmateForm() {
       setTimeout(() => {
         setSuccess(false);
         if (isNewUser) {
-          // For new users, redirect to home page after completing preferences
-          navigate("/", { replace: true });
+          // For new users, redirect to find flatmate page to see immediate results
+          navigate("/find-flatmate", { replace: true });
         } else {
-          // For existing users editing preferences, go to find flatmate page
+          // For existing users editing preferences, go back to find flatmate page
           navigate("/find-flatmate", { replace: true });
         }
-      }, 1000);
+      }, 2000); // Increased delay to show success message longer
     } catch (err) {
       setError("Could not save preferences");
       console.error("Save error:", err);
@@ -107,14 +110,40 @@ export default function FlatmateForm() {
 
   return (
     <>
+      {isNewUser && (
+        <div className="bg-gradient-to-r from-green-400 to-blue-500 text-white text-center py-4 mb-6">
+          <div className="max-w-2xl mx-auto px-4">
+            <h2 className="text-2xl font-bold mb-2">
+              {fromSource === 'signup' ? '🎉 Welcome to FlatScout!' : '👋 Complete Your Profile!'}
+            </h2>
+            <p className="text-lg">
+              {fromSource === 'signup' 
+                ? 'Just one more step - complete your profile to find amazing flatmates!'
+                : 'Set up your preferences to start finding compatible flatmates!'
+              }
+            </p>
+            <div className="mt-3 flex justify-center">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-white rounded-full"></div>
+                <div className="w-3 h-3 bg-white/70 rounded-full"></div>
+                <div className="w-3 h-3 bg-white/40 rounded-full"></div>
+                <span className="text-white/90 ml-2">
+                  {fromSource === 'signup' ? 'Step 2 of 2' : 'Almost there!'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div className="p-4 sm:p-8 max-w-2xl mx-auto bg-gradient-to-br from-blue-50 via-pink-50 to-yellow-50 rounded-2xl shadow-2xl mt-10 border border-pink-100">
         <h2 className="text-2xl font-extrabold mb-2 text-center text-blue-700 drop-shadow">
-          {isNewUser ? "Welcome! Set Up Your Profile" : "Edit Flatmate Preferences"}
+          {isNewUser ? "Set Up Your Flatmate Profile" : "Edit Flatmate Preferences"}
         </h2>
         <p className="text-gray-500 mb-6 text-center">
           {isNewUser 
-            ? "Let's get to know you better to help you find the perfect flatmates!" 
-            : "Tell us more about yourself to find the best flatmates!"
+            ? "Help us match you with compatible flatmates by sharing your preferences and lifestyle!" 
+            : "Update your preferences to find better flatmate matches!"
           }
         </p>
       <form onSubmit={submitForm} className="flex flex-col gap-6">
@@ -290,10 +319,17 @@ export default function FlatmateForm() {
           <textarea name="bio" value={form.bio} onChange={handleChange} placeholder="Tell us about yourself in a few sentences..." rows={3} required className="w-full rounded border px-3 py-2" />
         </div>
         {error && <div className="text-red-500 text-center font-medium">{error}</div>}
-        {success && <div className="text-green-600 text-center font-medium">Preferences saved!</div>}
-        <button type="submit" className="bg-gradient-to-r from-orange-400 to-pink-500 text-white px-6 py-2 rounded-full mt-2 font-bold shadow hover:from-orange-500 hover:to-pink-600 transition-all">
-          {isNewUser ? "Complete Setup" : "Save Preferences"}
+        {success && <div className="text-green-600 text-center font-medium">
+          {isNewUser ? "🎉 Profile completed! You're now listed as a potential flatmate!" : "Preferences saved!"}
+        </div>}
+        <button type="submit" className="bg-gradient-to-r from-orange-400 to-pink-500 text-white px-8 py-3 rounded-full mt-2 font-bold shadow hover:from-orange-500 hover:to-pink-600 transition-all text-lg">
+          {isNewUser ? "🚀 Complete Profile & Find Flatmates" : "💾 Save Preferences"}
         </button>
+        {isNewUser && (
+          <p className="text-sm text-gray-600 text-center mt-3">
+            After completing your profile, you'll be able to browse and connect with potential flatmates!
+          </p>
+        )}
       </form>
       </div>
     </>
