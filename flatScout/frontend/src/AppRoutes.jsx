@@ -8,6 +8,7 @@ import LoginPage from './pages/LoginPage';
 import Signup from './pages/Signup';
 import FindFlatmates from './components/FindFlatmates';
 import FlatmateForm from './components/FlatmateForm';
+import EmailTest from './components/EmailTest';
 
 
 
@@ -43,6 +44,7 @@ const AppRoutes = () => (
       <Route path="/booking-calendar" element={<ProtectedRoute><BookingCalendar /></ProtectedRoute>} />
       <Route path="/report-listing" element={<ProtectedRoute><ReportListing /></ProtectedRoute>} />
       <Route path="/rent-estimator" element={<ProtectedRoute><RentEstimator /></ProtectedRoute>} />
+      <Route path="/test-email" element={<ProtectedRoute><EmailTest /></ProtectedRoute>} />
       {/* OAuth success must be public so it can set login state */}
       <Route path="/oauth-success" element={<OAuthSuccess />} />
     </Routes>

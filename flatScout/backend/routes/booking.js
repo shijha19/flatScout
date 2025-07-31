@@ -2,6 +2,7 @@ import express from 'express';
 import Booking from '../models/booking.models.js';
 import User from '../models/user.models.js';
 import FlatListing from '../models/flatListing.models.js';
+import { sendBookingNotification, sendBookingConfirmation } from '../services/emailService.js';
 
 const router = express.Router();
 
@@ -51,6 +52,20 @@ router.get('/availability', async (req, res) => {
       return res.status(400).json({ message: 'Flat ID and date are required' });
     }
 
+    // Validate that the requested date is not in the past
+    const requestedDate = new Date(date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of day
+    requestedDate.setHours(0, 0, 0, 0); // Reset time to start of day
+    
+    if (requestedDate < today) {
+      return res.status(400).json({ 
+        message: 'Cannot check availability for past dates',
+        availableSlots: [],
+        bookedSlots: []
+      });
+    }
+
     // Get all bookings for this flat on this date
     const existingBookings = await Booking.find({
       flatId,
@@ -97,6 +112,18 @@ router.post('/create', async (req, res) => {
     // Validate required fields
     if (!flatId || !ownerEmail || !date || !timeSlot || !visitorName || !visitorEmail || !visitorPhone || !purpose) {
       return res.status(400).json({ message: 'All required fields must be provided' });
+    }
+
+    // Validate that the booking date is not in the past
+    const bookingDate = new Date(date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of day
+    bookingDate.setHours(0, 0, 0, 0); // Reset time to start of day
+    
+    if (bookingDate < today) {
+      return res.status(400).json({ 
+        message: 'Cannot book visits for past dates. Please select today or a future date.' 
+      });
     }
 
     // Get user making the booking
@@ -150,6 +177,34 @@ router.post('/create', async (req, res) => {
     // Populate the saved booking with flat details
     const populatedBooking = await Booking.findById(savedBooking._id)
       .populate('flatId', 'title location rent images');
+
+    // Send email notifications
+    try {
+      const bookingDetails = {
+        visitorName,
+        visitorEmail,
+        visitorPhone,
+        flatTitle: flat.title,
+        flatLocation: flat.location,
+        date,
+        timeSlot,
+        purpose,
+        notes,
+        ownerEmail
+      };
+
+      // Send notification to flat owner
+      const ownerNotification = await sendBookingNotification(ownerEmail, bookingDetails);
+      console.log('Owner notification result:', ownerNotification);
+
+      // Send confirmation to visitor
+      const visitorConfirmation = await sendBookingConfirmation(visitorEmail, bookingDetails);
+      console.log('Visitor confirmation result:', visitorConfirmation);
+
+    } catch (emailError) {
+      console.error('Email notification error:', emailError);
+      // Don't fail the booking creation if email fails
+    }
 
     res.status(201).json({
       success: true,

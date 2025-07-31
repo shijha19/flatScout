@@ -3,6 +3,7 @@ import session from 'express-session';
 import passport from 'passport';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import cors from 'cors';
 import pgRoutes from './routes/pgRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import flatListingRoutes from './routes/flatListingRoutes.js';
@@ -11,11 +12,18 @@ import authRoutes from './routes/auth.js';
 import notificationRoutes from './routes/notification.js';
 import connectionRequestRoutes from './routes/connectionRequest.js';
 import bookingRoutes from './routes/booking.js';
+import testEmailRoutes from './routes/testEmail.js';
 import './config/passport.js';
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// CORS middleware
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true
+}));
 
 // Session middleware
 app.use(session({
@@ -40,6 +48,7 @@ app.use('/api/flatmates', flatmateRoutes);
 app.use('/api/notification', notificationRoutes);
 app.use('/api/connection', connectionRequestRoutes);
 app.use('/api/booking', bookingRoutes);
+app.use('/api/test', testEmailRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {
