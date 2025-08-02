@@ -10,7 +10,7 @@ router.get("/notifications", async (req, res) => {
   if (!userId) return res.status(400).json({ message: "userId is required." });
 
   try {
-    console.log(`[Notification API] Fetching notifications for userId: ${userId}`);
+    // ...removed Notification API fetch log...
     
     // Find both sent and received pending connection requests for this user
     const receivedRequests = await ConnectionRequest.find({
@@ -18,14 +18,14 @@ router.get("/notifications", async (req, res) => {
       status: "pending"
     }).populate('fromUser', 'name email _id').sort({ createdAt: -1 });
     
-    console.log(`[Notification API] Found ${receivedRequests.length} received requests`);
+    // ...removed Notification API received requests log...
     
     const sentRequests = await ConnectionRequest.find({
       fromUser: userId,
       status: "pending"
     }).populate('toUser', 'name email _id').sort({ createdAt: -1 });
     
-    console.log(`[Notification API] Found ${sentRequests.length} sent requests`);
+    // ...removed Notification API sent requests log...
 
     // Format the response to match the existing notification structure
     const notifications = [
@@ -53,7 +53,7 @@ router.get("/notifications", async (req, res) => {
         }))
     ];
     
-    console.log(`[Notification API] Successfully formatted ${notifications.length} notifications`);
+    // ...removed Notification API formatted notifications log...
     res.status(200).json({ notifications });
   } catch (error) {
     console.error('[Notification API] error:', error);
