@@ -168,7 +168,7 @@ router.post("/login", async (req, res) => {
 
 // Update user profile
 router.put("/profile", async (req, res) => {
-  const { email, name, phone, bio, location } = req.body;
+  const { email, name, phone, bio, location, profileImage } = req.body;
   if (!email) {
     return res
       .status(400)
@@ -183,6 +183,7 @@ router.put("/profile", async (req, res) => {
     if (phone) user.phone = phone;
     if (bio) user.bio = bio;
     if (location) user.location = location;
+    if (profileImage) user.profileImage = profileImage;
     await user.save();
     res.status(200).json({ message: "Profile updated successfully.", user });
   } catch (err) {

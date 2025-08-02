@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 const Navbar = () => {
@@ -10,6 +10,10 @@ const Navbar = () => {
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [processingRequest, setProcessingRequest] = useState(null);
+  
+  // Refs for click outside functionality
+  const notificationRef = useRef(null);
+  const profileRef = useRef(null);
 
   // Fetch notifications function - moved outside useEffect so it can be called from bell icon
   const fetchNotifications = async () => {
@@ -72,6 +76,29 @@ const Navbar = () => {
     if (isLoggedIn) fetchNotifications();
   }, [location, isLoggedIn]);
 
+  // Click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Close notifications dropdown if clicked outside
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+      
+      // Close profile dropdown if clicked outside
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setProfileOpen(false);
+      }
+    };
+
+    // Add event listener
+    document.addEventListener('mousedown', handleClickOutside);
+    
+    // Cleanup
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const handleConnectionResponse = async (requestId, action) => {
     setProcessingRequest(requestId);
     try {
@@ -120,7 +147,6 @@ const Navbar = () => {
     // Feature links only for logged in users
     ...(isLoggedIn ? [
       { name: "Find Flatmate", path: "/find-flatmate" },
-      { name: "Report Listing", path: "/report-listing" },
       { name: "Booking Calendar", path: "/booking-calendar" },
       { name: "Rent Estimator", path: "/rent-estimator" },
     ] : [])
@@ -158,7 +184,7 @@ const Navbar = () => {
             {/* Notification Bell and Profile Dropdown (only when logged in) */}
             {isLoggedIn && (
               <>
-                <div className="relative ml-4">
+                <div className="relative ml-4" ref={notificationRef}>
                   <button
                     onClick={() => {
                       console.log('[Navbar] Bell icon clicked');
@@ -220,7 +246,7 @@ const Navbar = () => {
                     </div>
                   )}
                 </div>
-                <div className="relative ml-2">
+                <div className="relative ml-2" ref={profileRef}>
                   <button
                     onClick={() => setProfileOpen((prev) => !prev)}
                     className="flex items-center focus:outline-none"
@@ -232,8 +258,9 @@ const Navbar = () => {
                     />
                   </button>
                   {profileOpen && (
-                    <div className="absolute right-0 mt-2 w-40 bg-white border border-pink-100 rounded shadow-lg py-2 z-[10000]">
+                    <div className="absolute right-0 mt-2 w-48 bg-white border border-pink-100 rounded shadow-lg py-2 z-[10000]">
                       <Link to="/profile" className="block px-4 py-2 text-gray-700 hover:bg-yellow-50">Profile</Link>
+                      <Link to="/report-listing" className="block px-4 py-2 text-gray-700 hover:bg-pink-50">Report Listing</Link>
                       <button className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-orange-50" onClick={handleLogout}>Logout</button>
                     </div>
                   )}
@@ -288,6 +315,7 @@ const Navbar = () => {
             {isLoggedIn && (
               <div className="mt-2 border-t pt-2">
                 <Link to="/profile" className="block px-4 py-2 text-gray-700 hover:bg-yellow-50">Profile</Link>
+                <Link to="/report-listing" className="block px-4 py-2 text-gray-700 hover:bg-pink-50">Report Listing</Link>
                 <Link to="/settings" className="block px-4 py-2 text-gray-700 hover:bg-pink-50">Settings</Link>
                 <button className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-orange-50" onClick={handleLogout}>Logout</button>
               </div>

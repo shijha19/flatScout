@@ -95,8 +95,18 @@ export default function App() {
           </div>
         </div>
         <div className="flex flex-1 flex-col items-center">
-          {/* Search Bar */}
-          <div className="w-full flex justify-center mt-20 mb-12">
+          {/* Map Section */}
+          <div className="flex justify-center w-full my-8">
+            <div className="bg-white rounded-xl shadow-lg p-4 w-full max-w-3xl border border-gray-200" style={{ zIndex: 1 }}>
+              <div className="mb-4 text-center">
+                <h3 className="text-lg font-bold text-gray-800 mb-2">🗺️ Interactive Property Map</h3>
+                <p className="text-sm text-gray-600">Explore flats, PGs, and hostels near NIT Raipur</p>
+              </div>
+              <MapComponent searchTerm={searchTerm} />
+            </div>
+          </div>
+          {/* Search Bar moved below the map */}
+          <div className="w-full flex justify-center mt-4 mb-12">
             <form
               className="relative w-full max-w-xl"
               onSubmit={e => e.preventDefault()}
@@ -118,15 +128,6 @@ export default function App() {
                 <svg xmlns='http://www.w3.org/2000/svg' className='h-5 w-5' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M21 21l-4.35-4.35m0 0A7.5 7.5 0 104.5 4.5a7.5 7.5 0 0012.15 12.15z' /></svg>
               </button>
             </form>
-          </div>
-          <div className="flex justify-center w-full my-8">
-            <div className="bg-white rounded-xl shadow-lg p-4 w-full max-w-3xl border border-gray-200" style={{ zIndex: 1 }}>
-              <div className="mb-4 text-center">
-                <h3 className="text-lg font-bold text-gray-800 mb-2">🗺️ Interactive Property Map</h3>
-                <p className="text-sm text-gray-600">Explore flats, PGs, and hostels near NIT Raipur</p>
-              </div>
-              <MapComponent searchTerm={searchTerm} />
-            </div>
           </div>
 
           {/* Section Navigation Buttons removed */}
