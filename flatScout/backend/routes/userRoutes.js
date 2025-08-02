@@ -192,4 +192,24 @@ router.put("/profile", async (req, res) => {
   }
 });
 
+// Make user admin (for initial setup - remove in production)
+router.put("/make-admin/:email", async (req, res) => {
+  try {
+    const { email } = req.params;
+    const user = await User.findOneAndUpdate(
+      { email },
+      { role: 'admin' },
+      { new: true }
+    );
+    
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+    
+    res.json({ message: "User is now an admin", user });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
 export default router;

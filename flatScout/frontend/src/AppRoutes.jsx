@@ -3,6 +3,7 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
 import FlatmateProtectedRoute from './components/FlatmateProtectedRoute';
+import AdminProtectedRoute from './components/AdminProtectedRoute';
 import Layout from './components/Layout';
 import App from './components/App';
 import LoginPage from './pages/LoginPage';
@@ -24,6 +25,7 @@ import FlatmateProfile from './pages/FlatmateProfile';
 import BookingCalendar from './pages/BookingCalendar';
 import ReportListing from './pages/ReportListing';
 import RentEstimator from './pages/RentEstimator';
+import AdminDashboard from './pages/AdminReportDashboard';
 
 const AppRoutes = () => (
   <Layout>
@@ -46,6 +48,8 @@ const AppRoutes = () => (
       <Route path="/report-listing" element={<ProtectedRoute><ReportListing /></ProtectedRoute>} />
       <Route path="/rent-estimator" element={<ProtectedRoute><RentEstimator /></ProtectedRoute>} />
       <Route path="/test-email" element={<ProtectedRoute><EmailTest /></ProtectedRoute>} />
+      {/* Admin Dashboard - Admin Only */}
+      <Route path="/admin" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />
       {/* OAuth success must be public so it can set login state */}
       <Route path="/oauth-success" element={<OAuthSuccess />} />
     </Routes>

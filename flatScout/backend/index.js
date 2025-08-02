@@ -13,6 +13,7 @@ import notificationRoutes from './routes/notification.js';
 import connectionRequestRoutes from './routes/connectionRequest.js';
 import bookingRoutes from './routes/booking.js';
 import testEmailRoutes from './routes/testEmail.js';
+import adminRoutes from './routes/adminRoutes.js';
 import './config/passport.js';
 dotenv.config();
 
@@ -49,6 +50,7 @@ app.use('/api/notification', notificationRoutes);
 app.use('/api/connection', connectionRequestRoutes);
 app.use('/api/booking', bookingRoutes);
 app.use('/api/test', testEmailRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {

@@ -5,6 +5,7 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
@@ -73,8 +74,24 @@ const Navbar = () => {
 
   useEffect(() => {
     setIsLoggedIn(!!localStorage.getItem('userLoggedIn'));
-    if (isLoggedIn) fetchNotifications();
+    if (isLoggedIn) {
+      fetchNotifications();
+      checkAdminStatus();
+    }
   }, [location, isLoggedIn]);
+
+  // Check if user is admin
+  const checkAdminStatus = async () => {
+    try {
+      const userEmail = localStorage.getItem('userEmail');
+      if (!userEmail) return;
+
+      const response = await fetch(`/api/admin/dashboard-stats?userEmail=${encodeURIComponent(userEmail)}`);
+      setIsAdmin(response.ok);
+    } catch (err) {
+      setIsAdmin(false);
+    }
+  };
 
   // Click outside handler
   useEffect(() => {
@@ -261,6 +278,14 @@ const Navbar = () => {
                     <div className="absolute right-0 mt-2 w-48 bg-white border border-pink-100 rounded shadow-lg py-2 z-[10000]">
                       <Link to="/profile" className="block px-4 py-2 text-gray-700 hover:bg-yellow-50">Profile</Link>
                       <Link to="/report-listing" className="block px-4 py-2 text-gray-700 hover:bg-pink-50">Report Listing</Link>
+                      {isAdmin && (
+                        <Link to="/admin" className="block px-4 py-2 text-gray-700 hover:bg-blue-50 border-t border-gray-200">
+                          <span className="flex items-center">
+                            <span className="text-blue-600 mr-2">⚙️</span>
+                            Admin Dashboard
+                          </span>
+                        </Link>
+                      )}
                       <button className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-orange-50" onClick={handleLogout}>Logout</button>
                     </div>
                   )}
