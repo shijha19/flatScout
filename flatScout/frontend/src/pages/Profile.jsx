@@ -414,21 +414,47 @@ const Profile = () => {
                 </div>
               ) : (
                 connections.map((conn) => (
-                  <div key={conn._id || conn.id || conn.email} className="flex items-center gap-3 p-3 bg-gradient-to-r from-pink-50 to-pink-100 rounded-lg hover:from-pink-100 hover:to-pink-150 transition-colors">
-                    <img 
-                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(conn.name || 'User')}&background=F472B6&color=fff&size=48`} 
-                      alt="avatar" 
-                      className="w-10 h-10 rounded-full border-2 border-pink-200" 
-                    />
-                    <div className="flex-1">
-                      <div className="font-semibold text-pink-700">{conn.name}</div>
-                      <div className="text-gray-500 text-xs">{conn.email}</div>
+                  <div key={conn._id || conn.id || conn.email} className="bg-gradient-to-r from-pink-50 to-pink-100 rounded-lg p-4 hover:from-pink-100 hover:to-pink-150 transition-colors border border-pink-200">
+                    <div className="flex items-center gap-4">
+                      {/* Profile Image */}
+                      <img 
+                        src={conn.flatmateProfile?.photoUrl || conn.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(conn.name || 'User')}&background=F472B6&color=fff&size=64`} 
+                        alt="avatar" 
+                        className="w-12 h-12 rounded-full border-2 border-pink-300 object-cover shadow-md flex-shrink-0" 
+                      />
+                      
+                      <div className="flex-1 min-w-0">
+                        {/* Name and Bio only */}
+                        <div className="font-bold text-pink-700 text-lg">{conn.name}</div>
+                        {conn.flatmateProfile?.bio ? (
+                          <p className="text-gray-600 text-sm italic overflow-hidden" style={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: 1,
+                            WebkitBoxOrient: 'vertical',
+                            lineHeight: '1.4em',
+                            maxHeight: '1.4em'
+                          }}>
+                            "{conn.flatmateProfile.bio}"
+                          </p>
+                        ) : (
+                          <p className="text-gray-500 text-sm italic">No bio available</p>
+                        )}
+                      </div>
+                      
+                      {/* View Profile Button */}
+                      <div className="flex-shrink-0">
+                        <button 
+                          onClick={() => navigate(`/flatmate/${conn._id}`)}
+                          className="p-2 text-pink-600 hover:text-pink-700 hover:bg-pink-200 rounded-full transition-colors"
+                          title="View full profile"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
-                    <button className="p-1 text-gray-400 hover:text-pink-600 transition-colors">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </button>
                   </div>
                 ))
               )}

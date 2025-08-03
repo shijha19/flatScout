@@ -55,14 +55,35 @@ router.post("/connect", async (req, res) => {
   }
 });
 
-// Get all connections for a user
+// Get all connections for a user with detailed flatmate profile information
 router.get("/connections", async (req, res) => {
   const { email } = req.query;
   if (!email) return res.status(400).json({ message: "Email is required." });
   try {
     const user = await User.findOne({ email }).populate("connections");
     if (!user) return res.status(404).json({ message: "User not found." });
-    res.status(200).json({ connections: user.connections });
+    
+    // Get FlatmateProfile for each connection
+    const FlatmateProfile = (await import('../models/FlatmateProfile.js')).default;
+    const connectionsWithProfiles = await Promise.all(
+      user.connections.map(async (connectedUser) => {
+        // Find the flatmate profile for this connected user
+        let profile = await FlatmateProfile.findOne({ 
+          $or: [
+            { userId: connectedUser._id.toString() },
+            { userEmail: connectedUser.email },
+            { userId: connectedUser.email }
+          ]
+        });
+        
+        return {
+          ...connectedUser.toObject(),
+          flatmateProfile: profile ? profile.toObject() : null
+        };
+      })
+    );
+    
+    res.status(200).json({ connections: connectionsWithProfiles });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }

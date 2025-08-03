@@ -167,13 +167,21 @@ router.post('/profile/:userId', async (req, res) => {
   }
 });
 
-// Get matches for a user, show all cards (no kmeans clustering)
-// Get matches for a user, show all cards except own (by userId or email)
+// Get matches for a user, show all cards except own and already connected users
 router.get('/matches/:userId', async (req, res) => {
   try {
     const userId = req.params.userId;
-    // Optionally support email fallback for uniqueness
     const userEmail = req.query.userEmail;
+    
+    // First, find the current user to get their connections
+    let currentUser = null;
+    if (/^[a-fA-F0-9]{24}$/.test(userId)) {
+      currentUser = await User.findById(userId);
+    }
+    if (!currentUser && userEmail) {
+      currentUser = await User.findOne({ email: userEmail });
+    }
+    
     let query = { userId: { $ne: userId } };
     if (userEmail) {
       query = {
@@ -183,12 +191,29 @@ router.get('/matches/:userId', async (req, res) => {
         ]
       };
     }
+    
     const allProfiles = await FlatmateProfile.find(query);
     
+    // Filter out profiles of already connected users
+    let filteredProfiles = allProfiles;
+    if (currentUser && currentUser.connections && currentUser.connections.length > 0) {
+      filteredProfiles = allProfiles.filter(profile => {
+        // Check if this profile belongs to a connected user
+        const isConnected = currentUser.connections.some(connId => {
+          // Check by User ObjectId
+          if (profile.userId && /^[a-fA-F0-9]{24}$/.test(profile.userId)) {
+            return connId.equals(profile.userId);
+          }
+          // Note: For email-based connections, we'll check during user lookup below
+          return false;
+        });
+        return !isConnected;
+      });
+    }
+    
     // For each profile, try to find the corresponding User to get the correct _id for navigation
-    const enhancedProfiles = await Promise.all(allProfiles.map(async (profile) => {
+    const enhancedProfiles = await Promise.all(filteredProfiles.map(async (profile) => {
       let user = null;
-      
       // Try to find the user by various means
       if (profile.userId && /^[a-fA-F0-9]{24}$/.test(profile.userId)) {
         user = await User.findById(profile.userId);
@@ -199,17 +224,30 @@ router.get('/matches/:userId', async (req, res) => {
       if (!user && profile.userId && profile.userId.includes('@')) {
         user = await User.findOne({ email: profile.userId });
       }
-      
+
+      // Additional check: if user found, verify they're not in the connections list by User ObjectId
+      if (user && currentUser && currentUser.connections && currentUser.connections.length > 0) {
+        const isConnectedByUserId = currentUser.connections.some(connId => connId.equals(user._id));
+        if (isConnectedByUserId) {
+          return null; // Skip this profile as it belongs to a connected user
+        }
+      }
+
       // Return profile with the correct user _id for navigation
       const profileObj = profile.toObject();
       if (user) {
         profileObj.actualUserId = user._id.toString();
+        // If profile.photoUrl is missing or empty, use user's profileImage
+        if ((!profileObj.photoUrl || profileObj.photoUrl === '') && user.profileImage) {
+          profileObj.photoUrl = user.profileImage;
+        }
       }
-      
       return profileObj;
     }));
     
-    res.json(enhancedProfiles);
+    // Filter out null values (connected users that were skipped)
+    const finalProfiles = enhancedProfiles.filter(profile => profile !== null);
+    res.json(finalProfiles);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
