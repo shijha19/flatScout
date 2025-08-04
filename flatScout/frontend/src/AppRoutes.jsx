@@ -26,6 +26,7 @@ import BookingCalendar from './pages/BookingCalendar';
 import ReportListing from './pages/ReportListing';
 import RentEstimator from './pages/RentEstimator';
 import AdminDashboard from './pages/AdminReportDashboard';
+import ChatPage from './pages/ChatPage';
 
 const AppRoutes = () => (
   <Layout>
@@ -47,6 +48,7 @@ const AppRoutes = () => (
       <Route path="/booking-calendar" element={<ProtectedRoute><BookingCalendar /></ProtectedRoute>} />
       <Route path="/report-listing" element={<ProtectedRoute><ReportListing /></ProtectedRoute>} />
       <Route path="/rent-estimator" element={<ProtectedRoute><RentEstimator /></ProtectedRoute>} />
+      <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
       <Route path="/test-email" element={<ProtectedRoute><EmailTest /></ProtectedRoute>} />
       {/* Admin Dashboard - Admin Only */}
       <Route path="/admin" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />
