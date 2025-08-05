@@ -16,6 +16,7 @@ import bookingRoutes from './routes/booking.js';
 import testEmailRoutes from './routes/testEmail.js';
 import adminRoutes from './routes/adminRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
+import { createTestConnections } from './controllers/testController.js';
 import './config/passport.js';
 dotenv.config();
 
@@ -42,6 +43,11 @@ app.use(passport.session());
 // JSON body parser
 app.use(express.json());
 
+// Serve static files from public directory (development only)
+if (process.env.NODE_ENV !== 'production') {
+  app.use(express.static('public'));
+}
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/pg', pgRoutes);
@@ -55,6 +61,11 @@ app.use('/api/connected-users', connectedUsersRoutes);
 app.use('/api/booking', bookingRoutes);
 app.use('/api/test', testEmailRoutes);
 app.use('/api/admin', adminRoutes);
+
+// Development-only test endpoints
+if (process.env.NODE_ENV !== 'production') {
+  app.post('/api/test/create-connection', createTestConnections);
+}
 
 // Health check endpoint
 app.get("/health", (req, res) => {

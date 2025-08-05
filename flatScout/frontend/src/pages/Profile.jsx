@@ -441,8 +441,20 @@ const Profile = () => {
                         )}
                       </div>
                       
-                      {/* View Profile Button */}
-                      <div className="flex-shrink-0">
+                      {/* Action Buttons */}
+                      <div className="flex-shrink-0 flex gap-2">
+                        {/* Chat Button */}
+                        <button 
+                          onClick={() => navigate('/chat', { state: { startChatWith: conn } })}
+                          className="p-2 text-green-600 hover:text-green-700 hover:bg-green-100 rounded-full transition-colors"
+                          title="Start Chat"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                          </svg>
+                        </button>
+                        
+                        {/* View Profile Button */}
                         <button 
                           onClick={() => navigate(`/flatmate/${conn._id}`)}
                           className="p-2 text-pink-600 hover:text-pink-700 hover:bg-pink-200 rounded-full transition-colors"

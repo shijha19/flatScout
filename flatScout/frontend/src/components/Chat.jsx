@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { StreamChat } from 'stream-chat';
 import {
   Chat,
@@ -14,58 +15,193 @@ import 'stream-chat-react/dist/css/v2/index.css';
 
 const STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
 
+// Custom styles for scrollbar and animations
+const customStyles = `
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(243, 244, 246, 0.5);
+    border-radius: 3px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(to bottom, #ec4899, #8b5cf6);
+    border-radius: 3px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(to bottom, #db2777, #7c3aed);
+  }
+  
+  .chat-fade-in {
+    animation: fadeInUp 0.5s ease-out;
+  }
+  
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .pulse-ring {
+    animation: pulseRing 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+  }
+  
+  @keyframes pulseRing {
+    0% {
+      transform: scale(0.8);
+      opacity: 1;
+    }
+    80%, 100% {
+      transform: scale(1.2);
+      opacity: 0;
+    }
+  }
+`;
+
+// Inject custom styles
+if (typeof document !== 'undefined') {
+  const styleElement = document.createElement('style');
+  styleElement.textContent = customStyles;
+  document.head.appendChild(styleElement);
+}
+
 const ChatComponent = () => {
+  const location = useLocation();
   const [client, setClient] = useState(null);
   const [channel, setChannel] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [connectedUsers, setConnectedUsers] = useState([]);
+  const [activeChat, setActiveChat] = useState(null);
 
   // Function to create or get a direct message channel
   const createDirectChannel = async (otherUser) => {
-    if (!client) return;
+    if (!client) {
+      console.error('Chat client not initialized');
+      return;
+    }
 
     try {
+      setLoading(true);
+      console.log('Creating/selecting direct channel with user:', otherUser);
+
       // Sort IDs to ensure consistent channel ID
       const members = [client.userID, otherUser._id].sort();
       const channelId = `dm-${members.join('-')}`;
 
-      const newChannel = client.channel('messaging', channelId, {
-        members,
-        name: `Chat with ${otherUser.name}`,
+      // Try to query for an existing channel first
+      const existing = await client.queryChannels({
+        id: { $eq: channelId },
+        type: 'messaging',
       });
 
-      await newChannel.watch();
-      setChannel(newChannel);
+      let directChannel;
+      if (existing && existing.length > 0) {
+        directChannel = existing[0];
+        await directChannel.watch();
+        console.log('Found existing direct channel:', channelId);
+      } else {
+        // Get the correct profile image
+        const userImage = otherUser.flatmateProfile?.photoUrl || 
+                         otherUser.profileImage || 
+                         `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser.name || 'User')}&background=F472B6&color=fff&size=64`;
+        directChannel = client.channel('messaging', channelId, {
+          members,
+          name: otherUser.name,
+          image: userImage,
+        });
+        await directChannel.watch();
+        console.log('Created new direct channel:', channelId);
+      }
+
+      setChannel(directChannel);
+      setActiveChat(otherUser);
+      setLoading(false);
     } catch (error) {
-      console.error('Error creating direct channel:', error);
+      console.error('Error creating/selecting direct channel:', error);
       setError(error.message);
+      setLoading(false);
+    }
+  };
+
+  // Function to refresh connected users
+  const refreshConnectedUsers = async (userId) => {
+    try {
+      // Get user data for authentication
+      const userEmail = localStorage.getItem('userEmail');
+      if (!userEmail) {
+        console.error('No user email found in localStorage');
+        return;
+      }
+
+      const userResponse = await fetch(`/api/user/by-email/${encodeURIComponent(userEmail)}`);
+      if (!userResponse.ok) {
+        throw new Error('Failed to fetch user data for authentication');
+      }
+      const { user } = await userResponse.json();
+
+      console.log('Fetching connected users for userId:', userId);
+      const connectionsResponse = await fetch(`/api/connected-users/connected-users/${userId}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'user': JSON.stringify(user)
+        }
+      });
+      
+      if (!connectionsResponse.ok) {
+        const errorText = await connectionsResponse.text();
+        console.error('Failed to fetch connected users:', connectionsResponse.status, errorText);
+        throw new Error(`Failed to fetch connected users: ${connectionsResponse.status}`);
+      }
+      
+      const { connectedUsers: connected } = await connectionsResponse.json();
+      console.log('Successfully fetched connected users:', connected);
+      
+      // Create all connected users in Stream Chat via backend
+      if (connected.length > 0) {
+        try {
+          const userIds = connected.map(u => u._id);
+          await fetch('/api/chat/create-users', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'user': JSON.stringify(user)
+            },
+            body: JSON.stringify({ userIds })
+          });
+          console.log('Created connected users in Stream Chat');
+        } catch (err) {
+          console.warn('Failed to create users in Stream Chat:', err);
+        }
+      }
+      
+      setConnectedUsers(connected);
+    } catch (error) {
+      console.error('Error fetching connected users:', error);
+      setConnectedUsers([]); // Set empty array on error to show proper UI
     }
   };
   
+
+  // Initial chat client setup (runs once)
   useEffect(() => {
     const initChat = async () => {
       try {
-        // Get user email from localStorage
+        if (!STREAM_API_KEY || STREAM_API_KEY === 'your-stream-api-key') {
+          throw new Error('Stream Chat API key not configured. Please add VITE_STREAM_API_KEY to your .env file.');
+        }
         const userEmail = localStorage.getItem('userEmail');
-        if (!userEmail) {
-          throw new Error('User email not found in localStorage');
-        }
-
-        // Fetch user data from backend
+        if (!userEmail) throw new Error('User email not found in localStorage');
         const userResponse = await fetch(`/api/user/by-email/${encodeURIComponent(userEmail)}`);
-        if (!userResponse.ok) {
-          throw new Error('Failed to fetch user data');
-        }
-
+        if (!userResponse.ok) throw new Error('Failed to fetch user data');
         const { user } = await userResponse.json();
-        if (!user) {
-          throw new Error('User not found');
-        }
-
+        if (!user) throw new Error('User not found');
         console.log('User data:', user);
-
-        // First get the token from our backend
         const response = await fetch('/api/chat/token', {
           method: 'POST',
           headers: {
@@ -74,48 +210,24 @@ const ChatComponent = () => {
           },
           body: JSON.stringify({ userId: user._id })
         });
-
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.message || 'Failed to get chat token');
         }
-
         const { token } = await response.json();
         console.log('Got token from backend');
-        
-        // Now connect to Stream Chat
         const chatClient = StreamChat.getInstance(STREAM_API_KEY);
         console.log('Initializing Stream Chat with API key:', STREAM_API_KEY);
-        
         await chatClient.connectUser(
           {
             id: user._id,
             name: user.name || 'Anonymous',
-            image: user.profilePicture || 'https://via.placeholder.com/150',
+            image: user.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=random`,
           },
           token
         );
         console.log('Connected to Stream Chat');
-
-        // Create or get a channel
-        const channel = chatClient.channel('messaging', 'general', {
-          name: 'General Chat',
-          members: [user._id],
-        });
-        
-        await channel.watch();
-        console.log('Channel created/watched');
-
-        // Fetch connected users
-        const connectionsResponse = await fetch(`/api/connection/connected-users/${user._id}`);
-        if (!connectionsResponse.ok) {
-          throw new Error('Failed to fetch connected users');
-        }
-        const { connectedUsers: connected } = await connectionsResponse.json();
-        setConnectedUsers(connected);
-        console.log('Fetched connected users:', connected);
-
-        setChannel(channel);
+        await refreshConnectedUsers(user._id);
         setClient(chatClient);
       } catch (error) {
         console.error('Error in chat initialization:', error);
@@ -124,9 +236,7 @@ const ChatComponent = () => {
         setLoading(false);
       }
     };
-
     initChat();
-
     return () => {
       const cleanup = async () => {
         if (client) {
@@ -138,105 +248,303 @@ const ChatComponent = () => {
     };
   }, []);
 
+  // React to navigation state changes to open direct chat with a user
+  useEffect(() => {
+    if (!client) return;
+    const startChatWith = location.state?.startChatWith;
+    if (startChatWith) {
+      console.log('Auto-starting chat with user (navigation state changed):', startChatWith);
+      window.history.replaceState({}, document.title);
+      setTimeout(() => {
+        createDirectChannel(startChatWith);
+      }, 300); // Shorter delay since client is ready
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state?.startChatWith, client]);
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-lg text-gray-600">Loading chat...</div>
+      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-pink-50 to-purple-50">
+        <div className="text-center p-8 bg-white rounded-2xl shadow-lg border border-pink-100">
+          <div className="relative w-16 h-16 mx-auto mb-6">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-pink-200"></div>
+            <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-pink-500 absolute top-0"></div>
+          </div>
+          <div className="text-xl font-semibold text-gray-700 mb-2">Loading chat...</div>
+          <div className="text-sm text-gray-500">Connecting you with your flatmates</div>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-lg text-red-600">Error: {error}</div>
+      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-red-50 to-pink-50">
+        <div className="text-center max-w-md mx-auto p-8 bg-white rounded-2xl shadow-lg border border-red-100">
+          <div className="w-20 h-20 mx-auto mb-6 bg-red-100 rounded-full flex items-center justify-center">
+            <div className="text-red-500 text-4xl">⚠️</div>
+          </div>
+          <div className="text-2xl font-bold text-red-600 mb-4">Chat Unavailable</div>
+          <div className="text-gray-600 mb-6 leading-relaxed">{error}</div>
+          {error.includes('API key') && (
+            <div className="text-sm text-gray-600 bg-gray-50 p-4 rounded-xl mb-6 border-l-4 border-blue-400">
+              <p className="font-semibold mb-2">💡 To enable chat functionality:</p>
+              <ol className="list-decimal list-inside text-left space-y-1">
+                <li>Sign up for a free Stream Chat account</li>
+                <li>Get your API key from the dashboard</li>
+                <li>Add VITE_STREAM_API_KEY to your .env file</li>
+                <li>Restart the development server</li>
+              </ol>
+            </div>
+          )}
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl font-semibold hover:from-pink-600 hover:to-purple-600 transform hover:scale-105 transition-all duration-200 shadow-lg"
+          >
+            🔄 Try Again
+          </button>
+        </div>
       </div>
     );
   }
 
-  if (!client || !channel) {
+  if (!client) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-lg text-gray-600">Initializing chat...</div>
+      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
+        <div className="text-center p-8 bg-white rounded-2xl shadow-lg border border-blue-100">
+          <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center animate-pulse">
+            <div className="text-blue-500 text-2xl">💬</div>
+          </div>
+          <div className="text-xl font-semibold text-gray-700">Initializing chat...</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="h-screen bg-white">
+    <div className="h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 chat-fade-in">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b border-pink-100">
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="relative">
+                <div className="w-10 h-10 bg-gradient-to-r from-pink-500 to-purple-500 rounded-xl flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">💬</span>
+                </div>
+                <div className="absolute inset-0 w-10 h-10 bg-gradient-to-r from-pink-500 to-purple-500 rounded-xl pulse-ring"></div>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+                  FlatScout Chat
+                </h1>
+                <p className="text-sm text-gray-500">Connect with your flatmates instantly</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="hidden sm:flex items-center space-x-2 bg-green-50 px-3 py-1 rounded-full">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <span className="text-sm text-green-700 font-medium">Online</span>
+              </div>
+              <div className="flex items-center space-x-1 text-gray-500">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-xs">{new Date().toLocaleTimeString()}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <Chat client={client} theme="messaging light">
-        <div className="flex h-full">
-          <div className="w-1/4 border-r border-gray-200 flex flex-col">
+        <div className="flex h-[calc(100vh-80px)]">
+          {/* Sidebar */}
+          <div className="w-80 border-r border-pink-100 flex flex-col bg-white/50 backdrop-blur-sm">
             {/* Connected Users Section */}
-            <div className="p-4 border-b border-gray-200">
-              <h3 className="font-semibold text-gray-700 mb-2">Connected Users</h3>
-              <div className="space-y-2">
+            <div className="p-6 border-b border-pink-100 bg-white/80 backdrop-blur-sm">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-bold text-gray-800 text-lg flex items-center space-x-2">
+                  <span className="w-6 h-6 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs">👥</span>
+                  </span>
+                  <span>Connected Users</span>
+                  <span className="bg-gradient-to-r from-pink-100 to-purple-100 text-pink-600 text-xs px-2 py-1 rounded-full font-semibold">
+                    {connectedUsers.length}
+                  </span>
+                </h3>
+                <button
+                  onClick={() => {
+                    const userEmail = localStorage.getItem('userEmail');
+                    if (userEmail) {
+                      fetch(`/api/user/by-email/${encodeURIComponent(userEmail)}`)
+                        .then(res => res.json())
+                        .then(data => {
+                          if (data.user) {
+                            refreshConnectedUsers(data.user._id);
+                          }
+                        });
+                    }
+                  }}
+                  className="p-2 bg-gradient-to-r from-pink-100 to-purple-100 text-pink-600 rounded-xl hover:from-pink-200 hover:to-purple-200 transition-all duration-200 transform hover:scale-105 hover:shadow-md"
+                  title="Refresh connected users"
+                >
+                  🔄
+                </button>
+              </div>
+              <div className="space-y-3 max-h-72 overflow-y-auto custom-scrollbar">
                 {connectedUsers.map(user => (
                   <div
                     key={user._id}
                     onClick={() => createDirectChannel(user)}
-                    className="p-2 rounded hover:bg-gray-100 cursor-pointer flex items-center space-x-2"
+                    className={`p-4 rounded-xl cursor-pointer flex items-center space-x-3 transition-all duration-200 transform hover:scale-[1.02] ${
+                      activeChat?._id === user._id 
+                        ? 'bg-gradient-to-r from-pink-100 to-purple-100 border-2 border-pink-300 shadow-lg' 
+                        : 'hover:bg-white hover:shadow-md border-2 border-transparent'
+                    }`}
                   >
-                    <img
-                      src={user.profilePicture || 'https://via.placeholder.com/32'}
-                      alt={user.name}
-                      className="w-8 h-8 rounded-full"
-                    />
-                    <span className="text-sm text-gray-700">{user.name}</span>
+                    <div className="relative">
+                      <img
+                        src={user.profilePicture}
+                        alt={user.name}
+                        className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-md"
+                        onError={(e) => {
+                          e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=F472B6&color=fff&size=128`;
+                        }}
+                      />
+                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white"></div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-semibold text-gray-800 truncate block">
+                        {user.name}
+                      </span>
+                      <span className="text-xs text-gray-500 truncate block">
+                        {user.email}
+                      </span>
+                    </div>
+                    <div className="text-pink-400">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                    </div>
                   </div>
                 ))}
                 {connectedUsers.length === 0 && (
-                  <div className="text-sm text-gray-500 p-2">No connected users yet</div>
+                  <div className="text-center p-8 bg-white/60 rounded-xl border-2 border-dashed border-pink-200">
+                    <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-pink-100 to-purple-100 rounded-full flex items-center justify-center">
+                      <span className="text-3xl">💭</span>
+                    </div>
+                    <p className="font-semibold text-gray-700 mb-1">No connections yet</p>
+                    <p className="text-xs text-gray-500">Connect with flatmates to start chatting!</p>
+                  </div>
                 )}
               </div>
             </div>
 
-            {/* Channels List */}
+            {/* Recent Chats Section */}
             <div className="flex-1 overflow-y-auto">
-              <div className="p-4 border-b border-gray-200">
-                <h3 className="font-semibold text-gray-700">Recent Chats</h3>
+              <div className="p-6 border-b border-pink-100 bg-white/80 backdrop-blur-sm">
+                <h3 className="font-bold text-gray-800 text-lg flex items-center space-x-2">
+                  <span className="w-6 h-6 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs">📝</span>
+                  </span>
+                  <span>Recent Chats</span>
+                </h3>
               </div>
-              <ChannelList
-                filters={{
-                  type: 'messaging',
-                  members: { $in: [client.userID] }
-                }}
-                sort={{ last_message_at: -1 }}
-                options={{ state: true, presence: true, limit: 10 }}
-                List={({ loadedChannels }) => (
-                  <div className="channel-list">
-                    {loadedChannels?.length === 0 ? (
-                      <div className="p-4 text-gray-500 text-sm">No conversations yet</div>
-                    ) : (
-                      loadedChannels?.map(ch => (
-                        <div
-                          key={ch.id}
-                          onClick={() => setChannel(ch)}
-                          className={`p-4 hover:bg-gray-100 cursor-pointer ${
-                            ch.id === channel?.id ? 'bg-gray-100' : ''
-                          }`}
-                        >
-                          <div className="font-medium text-gray-800">{ch.data.name}</div>
-                          <div className="text-sm text-gray-500 truncate">
-                            {ch.state.messages[ch.state.messages.length - 1]?.text || 'No messages yet'}
+              <div className="p-3">
+                <ChannelList
+                  filters={{
+                    type: 'messaging',
+                    members: { $in: [client.userID] }
+                  }}
+                  sort={{ last_message_at: -1 }}
+                  options={{ state: true, presence: true, limit: 10 }}
+                  List={({ loadedChannels }) => (
+                    <div className="space-y-2">
+                      {loadedChannels?.length === 0 ? (
+                        <div className="p-6 text-center bg-white/60 rounded-xl border-2 border-dashed border-purple-200">
+                          <div className="w-12 h-12 mx-auto mb-3 bg-gradient-to-r from-purple-100 to-pink-100 rounded-full flex items-center justify-center">
+                            <span className="text-2xl">📝</span>
                           </div>
+                          <p className="font-semibold text-gray-700">No conversations yet</p>
+                          <p className="text-xs text-gray-500 mt-1">Start chatting with your connections!</p>
                         </div>
-                      ))
-                    )}
-                  </div>
-                )}
-              />
+                      ) : (
+                        loadedChannels?.map(ch => (
+                          <div
+                            key={ch.id}
+                            onClick={() => {
+                              setChannel(ch);
+                              setActiveChat(null);
+                            }}
+                            className={`p-4 rounded-xl cursor-pointer border-2 transition-all duration-200 transform hover:scale-[1.01] ${
+                              ch.id === channel?.id 
+                                ? 'bg-gradient-to-r from-purple-100 to-pink-100 border-purple-300 shadow-lg' 
+                                : 'hover:bg-white hover:shadow-md border-transparent bg-white/40'
+                            }`}
+                          >
+                            <div className="font-semibold text-gray-800 text-sm truncate flex items-center space-x-2">
+                              <span className="w-2 h-2 bg-green-400 rounded-full"></span>
+                              <span>{ch.data.name}</span>
+                            </div>
+                            <div className="text-xs text-gray-600 truncate mt-1">
+                              {ch.state.messages[ch.state.messages.length - 1]?.text || 'No messages yet'}
+                            </div>
+                            {ch.state.messages[ch.state.messages.length - 1] && (
+                              <div className="text-xs text-gray-400 mt-2 flex items-center space-x-1">
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>{new Date(ch.state.messages[ch.state.messages.length - 1].created_at).toLocaleDateString()}</span>
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                />
+              </div>
             </div>
           </div>
-          <div className="w-3/4">
-            <Channel channel={channel}>
-              <Window>
-                <ChannelHeader />
-                <MessageList />
-                <MessageInput />
-              </Window>
-              <Thread />
-            </Channel>
+          
+          {/* Main Chat Area */}
+          <div className="flex-1 flex flex-col bg-white/30 backdrop-blur-sm">
+            {channel ? (
+              <Channel channel={channel}>
+                <Window>
+                  <div className="bg-white/80 backdrop-blur-sm border-b border-pink-100">
+                    <ChannelHeader />
+                  </div>
+                  <div className="flex-1 bg-gradient-to-b from-white/50 to-pink-50/30">
+                    <MessageList />
+                  </div>
+                  <div className="bg-white/80 backdrop-blur-sm border-t border-pink-100">
+                    <MessageInput />
+                  </div>
+                </Window>
+                <Thread />
+              </Channel>
+            ) : (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center p-12 bg-white/60 rounded-3xl backdrop-blur-sm border border-pink-100 shadow-xl max-w-md mx-auto">
+                  <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-r from-pink-400 to-purple-500 rounded-full flex items-center justify-center shadow-lg">
+                    <span className="text-4xl text-white">💬</span>
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-800 mb-3 bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+                    Welcome to Chat
+                  </h3>
+                  <p className="text-gray-600 leading-relaxed">
+                    Select a connected user from the sidebar to start a conversation and connect with your flatmates!
+                  </p>
+                  <div className="mt-6 flex justify-center space-x-2">
+                    <div className="w-2 h-2 bg-pink-400 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                    <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </Chat>
