@@ -16,6 +16,7 @@ import bookingRoutes from './routes/booking.js';
 import testEmailRoutes from './routes/testEmail.js';
 import adminRoutes from './routes/adminRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
+import syncRoutes from './routes/syncRoutes.js';
 import { createTestConnections } from './controllers/testController.js';
 import './config/passport.js';
 dotenv.config();
@@ -61,6 +62,7 @@ app.use('/api/connected-users', connectedUsersRoutes);
 app.use('/api/booking', bookingRoutes);
 app.use('/api/test', testEmailRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/sync', syncRoutes);
 
 // Development-only test endpoints
 if (process.env.NODE_ENV !== 'production') {

@@ -70,14 +70,22 @@ const BookingCalendar = () => {
       if (data.success) {
         // Combine visitor and owner bookings and format for calendar
         const allBookings = [...data.visitorBookings, ...data.ownerBookings];
-        const formattedBookings = allBookings.map(booking => ({
-          id: booking._id,
-          title: `${booking.timeSlot} - ${booking.flatId?.title || 'Property Visit'}`,
-          start: new Date(`${booking.date.split('T')[0]}T${booking.timeSlot.split('-')[0]}:00`),
-          end: new Date(`${booking.date.split('T')[0]}T${booking.timeSlot.split('-')[1]}:00`),
-          resource: booking,
-          allDay: false
-        }));
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const formattedBookings = allBookings
+          .map(booking => {
+            const start = new Date(`${booking.date.split('T')[0]}T${booking.timeSlot.split('-')[0]}:00`);
+            const end = new Date(`${booking.date.split('T')[0]}T${booking.timeSlot.split('-')[1]}:00`);
+            return {
+              id: booking._id,
+              title: `${booking.timeSlot} - ${booking.flatId?.title || 'Property Visit'}`,
+              start,
+              end,
+              resource: booking,
+              allDay: false
+            };
+          })
+          .filter(booking => booking.end >= today); // Only show bookings whose end is today or in the future
         setBookings(formattedBookings);
       }
     } catch (error) {

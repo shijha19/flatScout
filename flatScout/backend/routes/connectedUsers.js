@@ -24,7 +24,9 @@ router.get('/connected-users/:userId', auth, async (req, res) => {
       id: conn._id,
       from: conn.fromUser,
       to: conn.toUser,
-      status: conn.status
+      status: conn.status,
+      createdAt: conn.createdAt,
+      respondedAt: conn.respondedAt
     })));
 
     // Extract the IDs of connected users

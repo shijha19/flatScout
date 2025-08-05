@@ -139,19 +139,11 @@ const ChatComponent = () => {
         return;
       }
 
-      const userResponse = await fetch(`/api/user/by-email/${encodeURIComponent(userEmail)}`);
-      if (!userResponse.ok) {
-        throw new Error('Failed to fetch user data for authentication');
-      }
-      const { user } = await userResponse.json();
-
-      console.log('Fetching connected users for userId:', userId);
-      const connectionsResponse = await fetch(`/api/connected-users/connected-users/${userId}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'user': JSON.stringify(user)
-        }
-      });
+      console.log('Fetching connected users for email:', userEmail);
+      
+      // Use the same API endpoint as the profile page to ensure consistency
+      // Add cache busting to ensure fresh data
+      const connectionsResponse = await fetch(`/api/user/connections?email=${encodeURIComponent(userEmail)}&_t=${Date.now()}`);
       
       if (!connectionsResponse.ok) {
         const errorText = await connectionsResponse.text();
@@ -159,13 +151,35 @@ const ChatComponent = () => {
         throw new Error(`Failed to fetch connected users: ${connectionsResponse.status}`);
       }
       
-      const { connectedUsers: connected } = await connectionsResponse.json();
-      console.log('Successfully fetched connected users:', connected);
+      const { connections } = await connectionsResponse.json();
+      console.log('Successfully fetched connected users from profile API:', connections);
+      
+      // Filter out any invalid connections (same as profile page does)
+      const validConnections = connections.filter(
+        (c) => c && c.email && c.name && c.email.includes('@') && c.name.length > 0
+      );
+      
+      console.log('Valid connections after filtering:', validConnections);
+      
+      // Transform the data to match the expected format for chat
+      const connectedUsers = validConnections.map(conn => ({
+        _id: conn._id,
+        name: conn.name,
+        email: conn.email,
+        profilePicture: conn.flatmateProfile?.photoUrl || conn.profileImage || 
+          `https://ui-avatars.com/api/?name=${encodeURIComponent(conn.name || 'User')}&background=4f46e5&color=fff&size=128`,
+        flatmateProfile: conn.flatmateProfile
+      }));
+      
+      console.log('Transformed connected users for chat:', connectedUsers.map(u => ({ id: u._id, name: u.name, email: u.email })));
       
       // Create all connected users in Stream Chat via backend
-      if (connected.length > 0) {
+      if (connectedUsers.length > 0) {
         try {
-          const userIds = connected.map(u => u._id);
+          const userIds = connectedUsers.map(u => u._id);
+          const userResponse = await fetch(`/api/user/by-email/${encodeURIComponent(userEmail)}`);
+          const { user } = await userResponse.json();
+          
           await fetch('/api/chat/create-users', {
             method: 'POST',
             headers: {
@@ -180,7 +194,7 @@ const ChatComponent = () => {
         }
       }
       
-      setConnectedUsers(connected);
+      setConnectedUsers(connectedUsers);
     } catch (error) {
       console.error('Error fetching connected users:', error);
       setConnectedUsers([]); // Set empty array on error to show proper UI
@@ -222,12 +236,12 @@ const ChatComponent = () => {
           {
             id: user._id,
             name: user.name || 'Anonymous',
-            image: user.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=random`,
+            image: user.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=random`,
           },
           token
         );
         console.log('Connected to Stream Chat');
-        await refreshConnectedUsers(user._id);
+        await refreshConnectedUsers();
         setClient(chatClient);
       } catch (error) {
         console.error('Error in chat initialization:', error);
@@ -377,13 +391,7 @@ const ChatComponent = () => {
                   onClick={() => {
                     const userEmail = localStorage.getItem('userEmail');
                     if (userEmail) {
-                      fetch(`/api/user/by-email/${encodeURIComponent(userEmail)}`)
-                        .then(res => res.json())
-                        .then(data => {
-                          if (data.user) {
-                            refreshConnectedUsers(data.user._id);
-                          }
-                        });
+                      refreshConnectedUsers();
                     }
                   }}
                   className="p-2 bg-gradient-to-r from-pink-100 to-purple-100 text-pink-600 rounded-xl hover:from-pink-200 hover:to-purple-200 transition-all duration-200 transform hover:scale-105 hover:shadow-md"
