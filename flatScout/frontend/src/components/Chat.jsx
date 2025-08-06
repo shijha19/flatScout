@@ -12,6 +12,7 @@ import {
   Window,
 } from 'stream-chat-react';
 import 'stream-chat-react/dist/css/v2/index.css';
+import { useChatContext } from '../contexts/ChatContext';
 
 const STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
 
@@ -61,6 +62,19 @@ const customStyles = `
       opacity: 0;
     }
   }
+  
+  .unread-glow {
+    animation: unreadGlow 2s ease-in-out infinite alternate;
+  }
+  
+  @keyframes unreadGlow {
+    from {
+      box-shadow: 0 0 5px rgba(239, 68, 68, 0.4);
+    }
+    to {
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.6), 0 0 30px rgba(239, 68, 68, 0.4);
+    }
+  }
 `;
 
 // Inject custom styles
@@ -72,12 +86,14 @@ if (typeof document !== 'undefined') {
 
 const ChatComponent = () => {
   const location = useLocation();
-  const [client, setClient] = useState(null);
   const [channel, setChannel] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [connectedUsers, setConnectedUsers] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
+
+  // Use shared chat client from context
+  const { chatClient: client, isInitialized, usersWithUnreadMessages } = useChatContext();
 
   // Function to create or get a direct message channel
   const createDirectChannel = async (otherUser) => {
@@ -122,6 +138,14 @@ const ChatComponent = () => {
       setChannel(directChannel);
       setActiveChat(otherUser);
       setLoading(false);
+
+      // Mark channel as read when opened
+      try {
+        await directChannel.markRead();
+        console.log('Marked direct channel as read');
+      } catch (err) {
+        console.warn('Failed to mark channel as read:', err);
+      }
     } catch (error) {
       console.error('Error creating/selecting direct channel:', error);
       setError(error.message);
@@ -200,71 +224,19 @@ const ChatComponent = () => {
       setConnectedUsers([]); // Set empty array on error to show proper UI
     }
   };
-  
-
-  // Initial chat client setup (runs once)
+  // Update loading state based on context initialization
   useEffect(() => {
-    const initChat = async () => {
-      try {
-        if (!STREAM_API_KEY || STREAM_API_KEY === 'your-stream-api-key') {
-          throw new Error('Stream Chat API key not configured. Please add VITE_STREAM_API_KEY to your .env file.');
-        }
-        const userEmail = localStorage.getItem('userEmail');
-        if (!userEmail) throw new Error('User email not found in localStorage');
-        const userResponse = await fetch(`/api/user/by-email/${encodeURIComponent(userEmail)}`);
-        if (!userResponse.ok) throw new Error('Failed to fetch user data');
-        const { user } = await userResponse.json();
-        if (!user) throw new Error('User not found');
-        console.log('User data:', user);
-        const response = await fetch('/api/chat/token', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'user': JSON.stringify(user)
-          },
-          body: JSON.stringify({ userId: user._id })
-        });
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to get chat token');
-        }
-        const { token } = await response.json();
-        console.log('Got token from backend');
-        const chatClient = StreamChat.getInstance(STREAM_API_KEY);
-        console.log('Initializing Stream Chat with API key:', STREAM_API_KEY);
-        await chatClient.connectUser(
-          {
-            id: user._id,
-            name: user.name || 'Anonymous',
-            image: user.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=random`,
-          },
-          token
-        );
-        console.log('Connected to Stream Chat');
-        await refreshConnectedUsers();
-        setClient(chatClient);
-      } catch (error) {
-        console.error('Error in chat initialization:', error);
-        setError(error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    initChat();
-    return () => {
-      const cleanup = async () => {
-        if (client) {
-          await client.disconnectUser();
-          console.log('Disconnected from Stream Chat');
-        }
-      };
-      cleanup();
-    };
-  }, []);
+    if (isInitialized && client) {
+      setLoading(false);
+      refreshConnectedUsers();
+    } else if (!isInitialized) {
+      setLoading(true);
+    }
+  }, [isInitialized, client]);
 
   // React to navigation state changes to open direct chat with a user
   useEffect(() => {
-    if (!client) return;
+    if (!client || !isInitialized) return;
     const startChatWith = location.state?.startChatWith;
     if (startChatWith) {
       console.log('Auto-starting chat with user (navigation state changed):', startChatWith);
@@ -274,7 +246,7 @@ const ChatComponent = () => {
       }, 300); // Shorter delay since client is ready
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.state?.startChatWith, client]);
+  }, [location.state?.startChatWith, client, isInitialized]);
 
   if (loading) {
     return (
@@ -401,42 +373,70 @@ const ChatComponent = () => {
                 </button>
               </div>
               <div className="space-y-3 max-h-72 overflow-y-auto custom-scrollbar">
-                {connectedUsers.map(user => (
-                  <div
-                    key={user._id}
-                    onClick={() => createDirectChannel(user)}
-                    className={`p-4 rounded-xl cursor-pointer flex items-center space-x-3 transition-all duration-200 transform hover:scale-[1.02] ${
-                      activeChat?._id === user._id 
-                        ? 'bg-gradient-to-r from-pink-100 to-purple-100 border-2 border-pink-300 shadow-lg' 
-                        : 'hover:bg-white hover:shadow-md border-2 border-transparent'
-                    }`}
-                  >
-                    <div className="relative">
-                      <img
-                        src={user.profilePicture}
-                        alt={user.name}
-                        className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-md"
-                        onError={(e) => {
-                          e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=F472B6&color=fff&size=128`;
-                        }}
-                      />
-                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white"></div>
+                {connectedUsers
+                  .sort((a, b) => {
+                    // Sort users with unread messages to the top
+                    const aHasUnread = usersWithUnreadMessages?.has(a._id);
+                    const bHasUnread = usersWithUnreadMessages?.has(b._id);
+                    if (aHasUnread && !bHasUnread) return -1;
+                    if (!aHasUnread && bHasUnread) return 1;
+                    return a.name.localeCompare(b.name);
+                  })
+                  .map(user => {
+                  const hasUnreadMessages = usersWithUnreadMessages?.has(user._id);
+                  return (
+                    <div
+                      key={user._id}
+                      onClick={() => createDirectChannel(user)}
+                      className={`p-4 rounded-xl cursor-pointer flex items-center space-x-3 transition-all duration-200 transform hover:scale-[1.02] relative ${
+                        activeChat?._id === user._id 
+                          ? 'bg-gradient-to-r from-pink-100 to-purple-100 border-2 border-pink-300 shadow-lg' 
+                          : hasUnreadMessages
+                          ? 'bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 shadow-md hover:shadow-lg unread-glow'
+                          : 'hover:bg-white hover:shadow-md border-2 border-transparent'
+                      }`}
+                    >
+                      {hasUnreadMessages && (
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white animate-pulse"></div>
+                      )}
+                      <div className="relative">
+                        <img
+                          src={user.profilePicture}
+                          alt={user.name}
+                          className={`w-12 h-12 rounded-full object-cover border-2 shadow-md ${
+                            hasUnreadMessages ? 'border-red-300' : 'border-white'
+                          }`}
+                          onError={(e) => {
+                            e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=F472B6&color=fff&size=128`;
+                          }}
+                        />
+                        <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
+                          hasUnreadMessages ? 'bg-red-400' : 'bg-green-400'
+                        }`}></div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-2">
+                          <span className={`text-sm font-semibold truncate block ${
+                            hasUnreadMessages ? 'text-red-800' : 'text-gray-800'
+                          }`}>
+                            {user.name}
+                          </span>
+                          {hasUnreadMessages && (
+                            <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full">New</span>
+                          )}
+                        </div>
+                        <span className="text-xs text-gray-500 truncate block">
+                          {user.email}
+                        </span>
+                      </div>
+                      <div className={`${hasUnreadMessages ? 'text-red-500' : 'text-pink-400'}`}>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-sm font-semibold text-gray-800 truncate block">
-                        {user.name}
-                      </span>
-                      <span className="text-xs text-gray-500 truncate block">
-                        {user.email}
-                      </span>
-                    </div>
-                    <div className="text-pink-400">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                      </svg>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {connectedUsers.length === 0 && (
                   <div className="text-center p-8 bg-white/60 rounded-xl border-2 border-dashed border-pink-200">
                     <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-pink-100 to-purple-100 rounded-full flex items-center justify-center">
@@ -478,36 +478,62 @@ const ChatComponent = () => {
                           <p className="text-xs text-gray-500 mt-1">Start chatting with your connections!</p>
                         </div>
                       ) : (
-                        loadedChannels?.map(ch => (
-                          <div
-                            key={ch.id}
-                            onClick={() => {
-                              setChannel(ch);
-                              setActiveChat(null);
-                            }}
-                            className={`p-4 rounded-xl cursor-pointer border-2 transition-all duration-200 transform hover:scale-[1.01] ${
-                              ch.id === channel?.id 
-                                ? 'bg-gradient-to-r from-purple-100 to-pink-100 border-purple-300 shadow-lg' 
-                                : 'hover:bg-white hover:shadow-md border-transparent bg-white/40'
-                            }`}
-                          >
-                            <div className="font-semibold text-gray-800 text-sm truncate flex items-center space-x-2">
-                              <span className="w-2 h-2 bg-green-400 rounded-full"></span>
-                              <span>{ch.data.name}</span>
-                            </div>
-                            <div className="text-xs text-gray-600 truncate mt-1">
-                              {ch.state.messages[ch.state.messages.length - 1]?.text || 'No messages yet'}
-                            </div>
-                            {ch.state.messages[ch.state.messages.length - 1] && (
-                              <div className="text-xs text-gray-400 mt-2 flex items-center space-x-1">
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <span>{new Date(ch.state.messages[ch.state.messages.length - 1].created_at).toLocaleDateString()}</span>
+                        loadedChannels?.map(ch => {
+                          const channelUnreadCount = ch.countUnread ? ch.countUnread() : 0;
+                          const isUnread = channelUnreadCount > 0;
+                          return (
+                            <div
+                              key={ch.id}
+                              onClick={async () => {
+                                setChannel(ch);
+                                setActiveChat(null);
+                                
+                                // Mark channel as read when opened
+                                try {
+                                  await ch.markRead();
+                                  console.log('Marked recent chat as read');
+                                } catch (err) {
+                                  console.warn('Failed to mark channel as read:', err);
+                                }
+                              }}
+                              className={`p-4 rounded-xl cursor-pointer border-2 transition-all duration-200 transform hover:scale-[1.01] relative ${
+                                ch.id === channel?.id 
+                                  ? 'bg-gradient-to-r from-purple-100 to-pink-100 border-purple-300 shadow-lg' 
+                                  : isUnread
+                                  ? 'bg-gradient-to-r from-red-50 to-pink-50 border-red-200 shadow-md hover:shadow-lg'
+                                  : 'hover:bg-white hover:shadow-md border-transparent bg-white/40'
+                              }`}
+                            >
+                              {isUnread && (
+                                <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white animate-pulse"></div>
+                              )}
+                              <div className={`font-semibold text-sm truncate flex items-center justify-between ${
+                                isUnread ? 'text-red-800' : 'text-gray-800'
+                              }`}>
+                                <div className="flex items-center space-x-2">
+                                  <span className={`w-2 h-2 rounded-full ${isUnread ? 'bg-red-400' : 'bg-green-400'}`}></span>
+                                  <span>{ch.data.name}</span>
+                                </div>
+                                {isUnread && (
+                                  <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full">
+                                    {channelUnreadCount > 9 ? '9+' : channelUnreadCount}
+                                  </span>
+                                )}
                               </div>
-                            )}
-                          </div>
-                        ))
+                              <div className="text-xs text-gray-600 truncate mt-1">
+                                {ch.state.messages[ch.state.messages.length - 1]?.text || 'No messages yet'}
+                              </div>
+                              {ch.state.messages[ch.state.messages.length - 1] && (
+                                <div className="text-xs text-gray-400 mt-2 flex items-center space-x-1">
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                  <span>{new Date(ch.state.messages[ch.state.messages.length - 1].created_at).toLocaleDateString()}</span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })
                       )}
                     </div>
                   )}

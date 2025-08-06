@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useChatContext } from "../contexts/ChatContext";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -11,6 +12,9 @@ const Navbar = () => {
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [processingRequest, setProcessingRequest] = useState(null);
+  
+  // Chat context for unread count
+  const { unreadCount } = useChatContext();
   
   // Refs for click outside functionality
   const notificationRef = useRef(null);
@@ -209,6 +213,11 @@ const Navbar = () => {
                   <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full text-xs px-1.5 py-0.5">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
                 </Link>
                 <div className="relative ml-4" ref={notificationRef}>
                   <button
@@ -348,6 +357,18 @@ const Navbar = () => {
             {/* Profile Dropdown for mobile (only when logged in) */}
             {isLoggedIn && (
               <div className="mt-2 border-t pt-2">
+                <Link 
+                  to="/chat" 
+                  className="flex items-center justify-between px-4 py-2 text-gray-700 hover:bg-pink-50"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <span>Chat</span>
+                  {unreadCount > 0 && (
+                    <span className="bg-red-500 text-white rounded-full text-xs px-2 py-0.5">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                </Link>
                 <Link to="/profile" className="block px-4 py-2 text-gray-700 hover:bg-yellow-50">Profile</Link>
                 <Link to="/report-listing" className="block px-4 py-2 text-gray-700 hover:bg-pink-50">Report Listing</Link>
                 <Link to="/settings" className="block px-4 py-2 text-gray-700 hover:bg-pink-50">Settings</Link>
