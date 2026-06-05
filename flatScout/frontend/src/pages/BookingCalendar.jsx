@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import enUS from 'date-fns/locale/en-US';
+import { useLocation } from 'react-router-dom';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import '../styles/calendar.css';
 import Tooltip from '../components/Tooltip';
@@ -19,6 +20,7 @@ const localizer = dateFnsLocalizer({
 });
 
 const BookingCalendar = () => {
+  const location = useLocation();
   const [bookings, setBookings] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showBookingForm, setShowBookingForm] = useState(false);
@@ -61,6 +63,59 @@ const BookingCalendar = () => {
     fetchFlats();
   }, []);
 
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const flatId = urlParams.get('flatId');
+
+    if (flatId) {
+      setFormData(prev => ({ ...prev, flatId }));
+      setSelectedDate(new Date());
+      setShowBookingForm(true);
+      setBookingStep(1);
+      setSelectedSlot('');
+
+      // Load the selected property immediately so the booking form can show it even
+      // if the full flats list is still loading or unavailable.
+      fetch(`/api/flats/${flatId}`)
+        .then(res => res.ok ? res.json() : Promise.reject(new Error('Failed to load selected property')))
+        .then(data => {
+          const selectedFlat = data.flat || data;
+          if (!selectedFlat || !selectedFlat._id) {
+            return;
+          }
+
+          setFlats(prev => {
+            const existing = prev.some(flat => flat._id === selectedFlat._id);
+            return existing ? prev : [selectedFlat, ...prev];
+          });
+
+          if (selectedFlat.contactEmail) {
+            setFormData(prev => ({
+              ...prev,
+              ownerEmail: selectedFlat.contactEmail
+            }));
+          }
+        })
+        .catch(error => {
+          console.error('Error loading selected flat for booking:', error);
+        });
+    }
+  }, [location.search]);
+
+  useEffect(() => {
+    if (!formData.flatId || flats.length === 0) {
+      return;
+    }
+
+    const selectedFlat = flats.find(flat => flat._id === formData.flatId);
+    if (selectedFlat && selectedFlat.contactEmail && formData.ownerEmail !== selectedFlat.contactEmail) {
+      setFormData(prev => ({
+        ...prev,
+        ownerEmail: selectedFlat.contactEmail
+      }));
+    }
+  }, [flats, formData.flatId, formData.ownerEmail]);
+
   const fetchBookings = async () => {
     try {
       const userEmail = localStorage.getItem('userEmail');
@@ -98,7 +153,15 @@ const BookingCalendar = () => {
       const response = await fetch('/api/flats/');
       const data = await response.json();
       if (data.flats) {
-        setFlats(data.flats);
+        setFlats(prev => {
+          const merged = [...data.flats];
+          prev.forEach(flat => {
+            if (!merged.some(existing => existing._id === flat._id)) {
+              merged.push(flat);
+            }
+          });
+          return merged;
+        });
       }
     } catch (error) {
       console.error('Error fetching flats:', error);
@@ -207,6 +270,12 @@ const BookingCalendar = () => {
       alert('Please select a property');
       return;
     }
+
+    const selectedFlat = flats.find(f => f._id === formData.flatId);
+    if (!selectedFlat) {
+      alert('Please select a valid property from the list');
+      return;
+    }
     
     if (!selectedSlot) {
       alert('Please select a time slot');
@@ -232,13 +301,16 @@ const BookingCalendar = () => {
     setLoading(true);
 
     try {
-      const selectedFlat = flats.find(f => f._id === formData.flatId);
       const bookingData = {
         ...formData,
-        ownerEmail: selectedFlat?.contactEmail || 'demo@example.com',
+        ownerEmail: selectedFlat.contactEmail || selectedFlat.ownerEmail || '',
         date: selectedDate.toISOString().split('T')[0],
         timeSlot: selectedSlot
       };
+
+      if (!bookingData.ownerEmail) {
+        throw new Error('The selected property does not have an owner email configured');
+      }
 
       console.log('Sending booking data:', bookingData);
 
@@ -250,11 +322,20 @@ const BookingCalendar = () => {
         body: JSON.stringify(bookingData)
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      const responseText = await response.text();
+      let data = {};
+
+      if (responseText) {
+        try {
+          data = JSON.parse(responseText);
+        } catch {
+          data = { message: responseText };
+        }
       }
 
-      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || `HTTP error! status: ${response.status}`);
+      }
 
       if (data.success) {
         alert('Booking created successfully!');
@@ -271,7 +352,7 @@ const BookingCalendar = () => {
         alert('Demo mode: Booking would be created successfully! (Backend not connected)');
         resetBookingModal();
       } else {
-        alert('Error creating booking. Please try again.');
+        alert(error.message || 'Error creating booking. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -580,11 +661,11 @@ const BookingCalendar = () => {
                             {flats.length > 0 ? (
                               flats.map(flat => (
                                 <option key={flat._id} value={flat._id}>
-                                  {flat.title} - {flat.location} (₹{flat.rent}/month)
+                                  {flat.title} - {flat.location} (₹{flat.price || flat.rent}/month)
                                 </option>
                               ))
                             ) : (
-                              <option value="demo-flat-1">Demo Property - Sample Location (₹15000/month)</option>
+                              <option value="" disabled>No properties available right now</option>
                             )}
                           </select>
                         </div>
