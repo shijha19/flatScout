@@ -12,4 +12,4 @@ services:
       - key: PORT
         generateValue: true
     # Add your environment variables in Render dashboard
-    # MONGO_URI, JWT_SECRET, FRONTEND_URL, etc.
+    # MONGO_URI, JWT_SECRET, FRONTEND_URL, EMAIL_FROM, EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS, etc.

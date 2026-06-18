@@ -3,6 +3,8 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+const defaultFromAddress = process.env.EMAIL_FROM || process.env.EMAIL_USER || 'FlatScout <noreply@flatscout.com>';
+
 // Create a transporter using Gmail
 const createTransporter = () => {
   // Check if email configuration is available
@@ -51,7 +53,7 @@ export const sendEmail = async ({ to, subject, text, html }) => {
     }
 
     const mailOptions = {
-      from: process.env.EMAIL_FROM || '"FlatScout" <noreply@flatscout.com>',
+      from: defaultFromAddress,
       to,
       subject,
       text,
@@ -99,7 +101,7 @@ export const sendBookingNotification = async (ownerEmail, bookingDetails) => {
     });
 
     const mailOptions = {
-      from: process.env.EMAIL_USER || 'flatscout.notification@gmail.com',
+      from: defaultFromAddress,
       to: ownerEmail,
       subject: `New Flat Visit Scheduled - ${flatTitle}`,
       html: `
@@ -223,7 +225,7 @@ export const sendBookingConfirmation = async (visitorEmail, bookingDetails) => {
     });
 
     const mailOptions = {
-      from: process.env.EMAIL_USER || 'flatscout.notification@gmail.com',
+      from: defaultFromAddress,
       to: visitorEmail,
       subject: `Booking Confirmation - ${flatTitle}`,
       html: `
