@@ -183,7 +183,8 @@ router.post('/create', async (req, res) => {
     const populatedBooking = await Booking.findById(savedBooking._id)
       .populate('flatId', 'title location rent images');
 
-    // Send email notifications in the background so booking creation is not blocked
+    // Send email notifications before returning so serverless or short-lived hosts
+    // do not drop the work after the response is sent.
     const bookingDetails = {
       visitorName,
       visitorEmail,
@@ -197,26 +198,22 @@ router.post('/create', async (req, res) => {
       ownerEmail
     };
 
-    setImmediate(() => {
-      Promise.allSettled([
-        sendBookingNotification(ownerEmail, bookingDetails),
-        sendBookingConfirmation(visitorEmail, bookingDetails)
-      ]).then(([ownerResult, visitorResult]) => {
-        if (ownerResult.status === 'fulfilled') {
-          console.log('Owner notification result:', ownerResult.value);
-        } else {
-          console.error('Owner notification failed:', ownerResult.reason);
-        }
+    const [ownerResult, visitorResult] = await Promise.allSettled([
+      sendBookingNotification(ownerEmail, bookingDetails),
+      sendBookingConfirmation(visitorEmail, bookingDetails)
+    ]);
 
-        if (visitorResult.status === 'fulfilled') {
-          console.log('Visitor confirmation result:', visitorResult.value);
-        } else {
-          console.error('Visitor confirmation failed:', visitorResult.reason);
-        }
-      }).catch(error => {
-        console.error('Unexpected email queue error:', error);
-      });
-    });
+    if (ownerResult.status === 'fulfilled') {
+      console.log('Owner notification result:', ownerResult.value);
+    } else {
+      console.error('Owner notification failed:', ownerResult.reason);
+    }
+
+    if (visitorResult.status === 'fulfilled') {
+      console.log('Visitor confirmation result:', visitorResult.value);
+    } else {
+      console.error('Visitor confirmation failed:', visitorResult.reason);
+    }
 
     res.status(201).json({
       success: true,
