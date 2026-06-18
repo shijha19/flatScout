@@ -4,6 +4,8 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const defaultFromAddress = process.env.EMAIL_FROM || process.env.EMAIL_USER || 'FlatScout <noreply@flatscout.com>';
+const emailProvider = String(process.env.EMAIL_PROVIDER || '').toLowerCase();
+const useResend = emailProvider === 'resend' || Boolean(process.env.RESEND_API_KEY);
 
 // Create a transporter using Gmail
 const createTransporter = () => {
@@ -16,12 +18,16 @@ const createTransporter = () => {
   const smtpHost = process.env.EMAIL_HOST;
   const smtpPort = Number(process.env.EMAIL_PORT || 587);
   const smtpSecure = String(process.env.EMAIL_SECURE || '').toLowerCase() === 'true' || smtpPort === 465;
+  const smtpTimeout = Number(process.env.EMAIL_TIMEOUT || 10000);
 
   if (smtpHost) {
     return nodemailer.createTransport({
       host: smtpHost,
       port: smtpPort,
       secure: smtpSecure,
+      connectionTimeout: smtpTimeout,
+      greetingTimeout: smtpTimeout,
+      socketTimeout: smtpTimeout,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
@@ -34,6 +40,9 @@ const createTransporter = () => {
 
   return nodemailer.createTransport({
     service: 'gmail',
+    connectionTimeout: smtpTimeout,
+    greetingTimeout: smtpTimeout,
+    socketTimeout: smtpTimeout,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
@@ -41,28 +50,90 @@ const createTransporter = () => {
   });
 };
 
+const sendWithResend = async ({ to, subject, text, html }) => {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    return { success: false, error: 'RESEND_API_KEY is not configured' };
+  }
+
+  const recipients = Array.isArray(to) ? to : [to];
+  const timeoutMs = Number(process.env.EMAIL_TIMEOUT || 10000);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: defaultFromAddress,
+        to: recipients,
+        subject,
+        html,
+        text
+      }),
+      signal: controller.signal
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      return {
+        success: false,
+        error: data?.message || data?.error || `Resend error: ${response.status}`
+      };
+    }
+
+    return { success: true, messageId: data?.id || 'resend-accepted' };
+  } catch (error) {
+    return { success: false, error: error.message };
+  } finally {
+    clearTimeout(timeoutId);
+  }
+};
+
+const sendWithSmtp = async ({ to, subject, text, html }) => {
+  const transporter = createTransporter();
+  if (!transporter) {
+    return { success: false, error: 'Email service not configured' };
+  }
+
+  const info = await transporter.sendMail({
+    from: defaultFromAddress,
+    to,
+    subject,
+    text,
+    html
+  });
+
+  return { success: true, messageId: info.messageId };
+};
+
+const sendWithConfiguredProvider = async ({ to, subject, text, html }) => {
+  if (useResend) {
+    const resendResult = await sendWithResend({ to, subject, text, html });
+    if (resendResult.success) {
+      return resendResult;
+    }
+    console.error('Resend delivery failed, falling back to SMTP:', resendResult.error);
+  }
+
+  return sendWithSmtp({ to, subject, text, html });
+};
+
 // Generic email sending function
 export const sendEmail = async ({ to, subject, text, html }) => {
   try {
-    const transporter = createTransporter();
-    
-    // If no email configuration, return early with warning
-    if (!transporter) {
-      console.warn('📧 Email not configured - email not sent');
-      return { success: false, error: 'Email service not configured' };
+    const result = await sendWithConfiguredProvider({ to, subject, text, html });
+    if (result.success) {
+      console.log('Email sent successfully:', result.messageId);
+      return result;
     }
 
-    const mailOptions = {
-      from: defaultFromAddress,
-      to,
-      subject,
-      text,
-      html
-    };
-
-    const info = await transporter.sendMail(mailOptions);
-    console.log('Email sent successfully:', info.messageId);
-    return { success: true, messageId: info.messageId };
+    console.warn('📧 Email not configured or provider failed - email not sent');
+    return result;
   } catch (error) {
     console.error('Error sending email:', error);
     return { success: false, error: error.message };
@@ -72,14 +143,6 @@ export const sendEmail = async ({ to, subject, text, html }) => {
 // Send booking notification to flat owner
 export const sendBookingNotification = async (ownerEmail, bookingDetails) => {
   try {
-    const transporter = createTransporter();
-    
-    // If no email configuration, return early with warning
-    if (!transporter) {
-      console.warn('📧 Email not configured - booking notification not sent');
-      return { success: false, error: 'Email service not configured' };
-    }
-
     const { 
       visitorName, 
       visitorEmail, 
@@ -101,7 +164,6 @@ export const sendBookingNotification = async (ownerEmail, bookingDetails) => {
     });
 
     const mailOptions = {
-      from: defaultFromAddress,
       to: ownerEmail,
       subject: `New Flat Visit Scheduled - ${flatTitle}`,
       html: `
@@ -184,9 +246,14 @@ FlatScout Team
       `
     };
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log('Booking notification email sent successfully:', info.messageId);
-    return { success: true, messageId: info.messageId };
+    const result = await sendWithConfiguredProvider(mailOptions);
+    if (result.success) {
+      console.log('Booking notification email sent successfully:', result.messageId);
+      return result;
+    }
+
+    console.warn('📧 Booking notification not sent:', result.error);
+    return result;
     
   } catch (error) {
     console.error('Error sending booking notification email:', error);
@@ -197,14 +264,6 @@ FlatScout Team
 // Send booking confirmation to visitor
 export const sendBookingConfirmation = async (visitorEmail, bookingDetails) => {
   try {
-    const transporter = createTransporter();
-    
-    // If no email configuration, return early with warning
-    if (!transporter) {
-      console.warn('📧 Email not configured - booking confirmation not sent');
-      return { success: false, error: 'Email service not configured' };
-    }
-
     const { 
       visitorName, 
       ownerEmail,
@@ -225,7 +284,6 @@ export const sendBookingConfirmation = async (visitorEmail, bookingDetails) => {
     });
 
     const mailOptions = {
-      from: defaultFromAddress,
       to: visitorEmail,
       subject: `Booking Confirmation - ${flatTitle}`,
       html: `
@@ -304,9 +362,14 @@ Thank you for using FlatScout!
       `
     };
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log('Booking confirmation email sent successfully:', info.messageId);
-    return { success: true, messageId: info.messageId };
+    const result = await sendWithConfiguredProvider(mailOptions);
+    if (result.success) {
+      console.log('Booking confirmation email sent successfully:', result.messageId);
+      return result;
+    }
+
+    console.warn('📧 Booking confirmation not sent:', result.error);
+    return result;
     
   } catch (error) {
     console.error('Error sending booking confirmation email:', error);
